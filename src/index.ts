@@ -1,16 +1,16 @@
 /**
  * Public programmatic API.
  *
- * `mneme` ships as both a CLI and a library. Most users will reach for
- * the CLI (`mneme index`, `mneme ask`, `mneme mcp`), but the library
- * surface lets you embed mneme inside other Node services — for example,
+ * `recallr` ships as both a CLI and a library. Most users will reach for
+ * the CLI (`recallr index`, `recallr ask`, `recallr mcp`), but the library
+ * surface lets you embed recallr inside other Node services — for example,
  * a backend that builds a personal knowledge graph for each of its users.
  *
  * Example:
  *
- *     import { SqliteStore, LocalEmbedder, MboxConnector, indexConnector, ask, llmFromEnv } from "mneme";
+ *     import { SqliteStore, LocalEmbedder, MboxConnector, indexConnector, ask, llmFromEnv } from "recallr";
  *
- *     const store = await SqliteStore.open("./mneme.db");
+ *     const store = await SqliteStore.open("./recallr.db");
  *     const embedder = await LocalEmbedder.load();
  *     await indexConnector({
  *       connector: new MboxConnector("./inbox.mbox"),
@@ -55,7 +55,7 @@ export {
 export { ask, type AskOptions, type AskResult } from "./ask.js";
 export {
   loadConfig,
-  type MnemeConfig,
+  type RecallrConfig,
   type SourceConfig,
 } from "./config.js";
 export { startServer, type ServerOptions } from "./server/server.js";

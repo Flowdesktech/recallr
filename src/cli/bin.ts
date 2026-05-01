@@ -10,7 +10,7 @@ import { statusCommand } from "./commands/status.js";
 const program = new Command();
 
 program
-  .name("mneme")
+  .name("recallr")
   .description(
     "Local-first memory for every message you've ever sent.\n\n" +
       "Index your inboxes once, then ask questions across all of them — from\n" +
@@ -29,6 +29,6 @@ program
   .parseAsync(process.argv)
   .catch((err) => {
     const msg = err instanceof Error ? err.message : String(err);
-    process.stderr.write(`mneme: ${msg}\n`);
+    process.stderr.write(`recallr: ${msg}\n`);
     process.exit(1);
   });

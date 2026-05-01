@@ -43,7 +43,7 @@ describe("indexConnector + sample mbox e2e", () => {
   let store: SqliteStore;
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), "mneme-e2e-"));
+    dir = mkdtempSync(join(tmpdir(), "recallr-e2e-"));
     store = await SqliteStore.open(join(dir, "test.db"));
   });
 

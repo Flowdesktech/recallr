@@ -6,11 +6,11 @@ dist
 .env.local
 *.tsbuildinfo
 
-# mneme local data
-.mneme/
-*.mneme.db
-*.mneme.db-shm
-*.mneme.db-wal
+# recallr local data
+.recallr/
+*.recallr.db
+*.recallr.db-shm
+*.recallr.db-wal
 
 # transformers.js model cache
 .cache/

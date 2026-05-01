@@ -6,7 +6,7 @@ import { loadConfig } from "../../config.js";
 
 export function initCommand(): Command {
   return new Command("init")
-    .description("Create the local mneme home directory and a starter config.")
+    .description("Create the local recallr home directory and a starter config.")
     .option("--force", "Overwrite an existing config.json", false)
     .action(async (opts: { force: boolean }) => {
       const cfg = await loadConfig();
@@ -22,7 +22,7 @@ export function initCommand(): Command {
       }
 
       const starter = {
-        $schema: "https://github.com/flowdesktech/mneme/raw/main/schema/config.schema.json",
+        $schema: "https://github.com/flowdesktech/recallr/raw/main/schema/config.schema.json",
         embedModel: cfg.embedModel,
         embedDimension: cfg.embedDimension,
         sources: [
@@ -44,10 +44,10 @@ export function initCommand(): Command {
 
       await writeFile(configPath, `${JSON.stringify(starter, null, 2)}\n`);
       process.stdout.write(
-        `${pc.green("✓")} Initialized mneme home at ${pc.cyan(cfg.home)}\n` +
+        `${pc.green("✓")} Initialized recallr home at ${pc.cyan(cfg.home)}\n` +
           `  • Database will live at ${pc.cyan(cfg.dbPath)}\n` +
           `  • Edit ${pc.cyan(configPath)} to add real sources\n` +
-          `  • Run ${pc.cyan("mneme index")} to start indexing\n`,
+          `  • Run ${pc.cyan("recallr index")} to start indexing\n`,
       );
     });
 }

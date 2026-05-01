@@ -1,5 +1,5 @@
 /**
- * Tiny client for the local mneme HTTP server.
+ * Tiny client for the local recallr HTTP server.
  *
  * Lives at the same origin as the UI in production. In `vite dev` mode
  * Vite's dev server proxies /api -> http://localhost:7474 (see

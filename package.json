@@ -1,11 +1,11 @@
 {
-  "name": "mneme",
+  "name": "recallr",
   "version": "0.1.0",
   "description": "Local-first memory for every message you've ever sent. Index your inboxes; recall them from any AI.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "mneme": "./dist/cli/bin.js"
+    "recallr": "./dist/cli/bin.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,12 +28,12 @@
   "engines": {
     "node": ">=20.10"
   },
-  "homepage": "https://github.com/flowdesktech/mneme",
+  "homepage": "https://github.com/flowdesktech/recallr",
   "repository": {
     "type": "git",
-    "url": "https://github.com/flowdesktech/mneme.git"
+    "url": "https://github.com/flowdesktech/recallr.git"
   },
-  "bugs": "https://github.com/flowdesktech/mneme/issues",
+  "bugs": "https://github.com/flowdesktech/recallr/issues",
   "keywords": [
     "ai",
     "agent",

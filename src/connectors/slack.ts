@@ -24,7 +24,7 @@ import type { Connector, Message, Participant } from "../types.js";
  * What we do:
  *   - Build a `userId -> SlackUser` map for mention rendering.
  *   - Walk every channel folder we recognize from the metadata files.
- *   - For each daily file, normalize messages to mneme `Message`s.
+ *   - For each daily file, normalize messages to recallr `Message`s.
  *   - Skip system/noise subtypes (channel_join, message_changed, etc.).
  *   - Render Slack markup: `<@U123>` -> `@Display Name`,
  *     `<#C123|general>` -> `#general`, `<https://x|label>` -> `label (https://x)`.
@@ -49,7 +49,7 @@ export class SlackExportConnector implements Connector {
     const st = await stat(this.path).catch(() => null);
     if (!st || !st.isDirectory()) {
       throw new Error(
-        `mneme: ${this.path} is not a directory.\n` +
+        `recallr: ${this.path} is not a directory.\n` +
           `Slack exports must be unzipped first. On macOS/Linux:\n` +
           `  unzip slack-export.zip -d slack-export/\n` +
           `On Windows:\n` +
@@ -58,7 +58,7 @@ export class SlackExportConnector implements Connector {
     }
     if (!existsSync(join(this.path, "users.json"))) {
       throw new Error(
-        `mneme: ${this.path} does not look like a Slack export ` +
+        `recallr: ${this.path} does not look like a Slack export ` +
           `(no users.json at the root).`,
       );
     }

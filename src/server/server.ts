@@ -22,7 +22,7 @@ export interface ServerOptions {
 }
 
 /**
- * Spin up the local mneme HTTP server.
+ * Spin up the local recallr HTTP server.
  *
  * The server intentionally has no auth: it binds to 127.0.0.1 only,
  * exactly like Ollama, LM Studio, and Jupyter. Exposing it on a LAN
@@ -54,7 +54,7 @@ export async function startServer(opts: ServerOptions = {}): Promise<{
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       process.stderr.write(
-        `mneme: embedder failed to load, falling back to lexical search: ${msg}\n`,
+        `recallr: embedder failed to load, falling back to lexical search: ${msg}\n`,
       );
     }
   }
@@ -101,7 +101,7 @@ async function handle(
 
   // CORS preflight is rejected by default. We are 127.0.0.1-only and
   // intend to stay that way; any cross-origin client should be talking
-  // to mneme via MCP, not HTTP.
+  // to recallr via MCP, not HTTP.
   if (req.method === "OPTIONS") {
     res.writeHead(204);
     res.end();
@@ -218,7 +218,7 @@ async function handleStatic(
     return writeError(
       res,
       404,
-      `web assets not found at ${webRoot}. Run \`npm run build:web\` or reinstall mneme.`,
+      `web assets not found at ${webRoot}. Run \`npm run build:web\` or reinstall recallr.`,
     );
   }
 }

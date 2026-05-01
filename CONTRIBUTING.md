@@ -1,4 +1,4 @@
-# Contributing to mneme
+# Contributing to recallr
 
 Thanks for considering a contribution. The two highest-leverage things you can do are:
 
@@ -13,7 +13,7 @@ Thanks for considering a contribution. The two highest-leverage things you can d
 ## Development
 
 ```bash
-git clone https://github.com/flowdesktech/mneme && cd mneme
+git clone https://github.com/flowdesktech/recallr && cd recallr
 npm install
 npm run dev            # tsup watch mode
 npm test               # vitest

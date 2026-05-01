@@ -4,7 +4,7 @@ import { defineConfig } from "vite";
 
 /**
  * The web UI builds into ../dist-web at the repo root, which is then
- * shipped inside the npm package and served by `mneme serve`.
+ * shipped inside the npm package and served by `recallr serve`.
  *
  * `base` is "" so all asset urls in the built index.html are relative
  * — important because we serve the same file at any port the user picks.

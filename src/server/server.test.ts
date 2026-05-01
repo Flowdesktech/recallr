@@ -12,9 +12,9 @@ import { startServer } from "./server.js";
  * ephemeral port, points it at a freshly indexed temp database, and
  * exercises every public route end-to-end.
  *
- * The test stays hermetic by setting MNEME_HOME to a tempdir and
- * pointing MNEME_DB at a per-run database file, so it never touches
- * the developer's real ~/.mneme.
+ * The test stays hermetic by setting RECALLR_HOME to a tempdir and
+ * pointing RECALLR_DB at a per-run database file, so it never touches
+ * the developer's real ~/.recallr.
  */
 describe("HTTP server", () => {
   let tempHome: string;
@@ -26,14 +26,14 @@ describe("HTTP server", () => {
   let originalDb: string | undefined;
 
   beforeAll(async () => {
-    tempHome = mkdtempSync(join(tmpdir(), "mneme-server-"));
+    tempHome = mkdtempSync(join(tmpdir(), "recallr-server-"));
     dbPath = join(tempHome, "test.db");
     webRoot = join(tempHome, "web");
 
     // Minimal stand-in for the bundled web assets — server should serve
     // whatever is at index.html.
     mkdirSync(webRoot, { recursive: true });
-    writeFileSync(join(webRoot, "index.html"), "<html><body>mneme test</body></html>");
+    writeFileSync(join(webRoot, "index.html"), "<html><body>recallr test</body></html>");
 
     // Index the bundled sample mbox into the temp store.
     const store = await SqliteStore.open(dbPath);
@@ -41,10 +41,10 @@ describe("HTTP server", () => {
     await indexConnector({ connector, store });
     store.close();
 
-    originalHome = process.env.MNEME_HOME;
-    originalDb = process.env.MNEME_DB;
-    process.env.MNEME_HOME = tempHome;
-    process.env.MNEME_DB = dbPath;
+    originalHome = process.env.RECALLR_HOME;
+    originalDb = process.env.RECALLR_DB;
+    process.env.RECALLR_HOME = tempHome;
+    process.env.RECALLR_DB = dbPath;
 
     const started = await startServer({
       port: 0,
@@ -57,10 +57,10 @@ describe("HTTP server", () => {
 
   afterAll(async () => {
     await close();
-    if (originalHome === undefined) delete process.env.MNEME_HOME;
-    else process.env.MNEME_HOME = originalHome;
-    if (originalDb === undefined) delete process.env.MNEME_DB;
-    else process.env.MNEME_DB = originalDb;
+    if (originalHome === undefined) delete process.env.RECALLR_HOME;
+    else process.env.RECALLR_HOME = originalHome;
+    if (originalDb === undefined) delete process.env.RECALLR_DB;
+    else process.env.RECALLR_DB = originalDb;
     rmSync(tempHome, { recursive: true, force: true });
   });
 
@@ -69,14 +69,14 @@ describe("HTTP server", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toMatch(/text\/html/);
     const body = await res.text();
-    expect(body).toContain("mneme test");
+    expect(body).toContain("recallr test");
   });
 
   it("falls back to index.html for unknown routes (SPA mode)", async () => {
     const res = await fetch(`${baseUrl}/some/client/route`);
     expect(res.status).toBe(200);
     const body = await res.text();
-    expect(body).toContain("mneme test");
+    expect(body).toContain("recallr test");
   });
 
   it("GET /api/status returns counts", async () => {
@@ -129,7 +129,7 @@ describe("HTTP server", () => {
     // Either resolves to index.html (200) — never the targeted file.
     expect(res.status).toBe(200);
     const body = await res.text();
-    expect(body).toContain("mneme test");
+    expect(body).toContain("recallr test");
     expect(body).not.toContain("root:");
   });
 });

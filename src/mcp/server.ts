@@ -10,7 +10,7 @@ import { SqliteStore } from "../store/sqlite.js";
 import type { Embedder, Message, SearchHit } from "../types.js";
 
 /**
- * Mneme as an MCP server.
+ * Recallr as an MCP server.
  *
  * Exposes four tools to any MCP client (Cursor, Claude Desktop, Goose, etc):
  *
@@ -38,13 +38,13 @@ export async function runMcpServer(opts: { useEmbedder?: boolean } = {}): Promis
       // a degraded retrieval is much better than no retrieval for the agent.
       const msg = err instanceof Error ? err.message : String(err);
       process.stderr.write(
-        `mneme: failed to load embedder, falling back to lexical search: ${msg}\n`,
+        `recallr: failed to load embedder, falling back to lexical search: ${msg}\n`,
       );
     }
   }
 
   const server = new Server(
-    { name: "mneme", version: "0.1.0" },
+    { name: "recallr", version: "0.1.0" },
     { capabilities: { tools: {} } },
   );
 
@@ -92,7 +92,7 @@ export async function runMcpServer(opts: { useEmbedder?: boolean } = {}): Promis
       },
       {
         name: "get_message",
-        description: "Fetch a single message by its mneme id.",
+        description: "Fetch a single message by its recallr id.",
         inputSchema: {
           type: "object",
           properties: {
@@ -209,7 +209,7 @@ export async function runMcpServer(opts: { useEmbedder?: boolean } = {}): Promis
       const msg = err instanceof Error ? err.message : String(err);
       return {
         isError: true,
-        content: [{ type: "text", text: `mneme error: ${msg}` }],
+        content: [{ type: "text", text: `recallr error: ${msg}` }],
       };
     }
   });

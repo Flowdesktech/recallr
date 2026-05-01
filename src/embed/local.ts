@@ -8,7 +8,7 @@ import type { Embedder } from "../types.js";
  * downloaded to the user's HF cache on first use, then cached forever.
  *
  * Heavy dependency, so we lazy-import it inside `init()`. That keeps
- * `mneme --help` and `mneme status` instant for users who never run
+ * `recallr --help` and `recallr status` instant for users who never run
  * the indexer (e.g. they only use the MCP server against a pre-built db).
  */
 export class LocalEmbedder implements Embedder {

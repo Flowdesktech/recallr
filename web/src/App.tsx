@@ -60,7 +60,7 @@ export function App() {
         <header className="header">
           <div className="brand">
             <span className="dot" />
-            <span className="brand-name">mneme</span>
+            <span className="brand-name">recallr</span>
           </div>
           <StatusBar status={status} />
         </header>
@@ -86,7 +86,7 @@ export function App() {
                 </div>
               ) : (
                 <pre className="empty-hint">
-                  {`mneme index ~/mail.mbox\n# then come back here`}
+                  {`recallr index ~/mail.mbox\n# then come back here`}
                 </pre>
               )}
             </div>

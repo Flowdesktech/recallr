@@ -90,7 +90,7 @@ describe("SlackExportConnector", () => {
   });
 
   it("rejects a non-slack directory with a useful error", async () => {
-    const tmp = mkdtempSync(join(tmpdir(), "mneme-slack-bad-"));
+    const tmp = mkdtempSync(join(tmpdir(), "recallr-slack-bad-"));
     writeFileSync(join(tmp, "stray.txt"), "hello");
     const c = new SlackExportConnector({ path: tmp });
     try {
@@ -105,7 +105,7 @@ describe("SlackExportConnector", () => {
   });
 
   it("rejects a zip file with extraction guidance", async () => {
-    const tmp = mkdtempSync(join(tmpdir(), "mneme-slack-zip-"));
+    const tmp = mkdtempSync(join(tmpdir(), "recallr-slack-zip-"));
     const zipPath = join(tmp, "slack-export.zip");
     writeFileSync(zipPath, "not really a zip");
     const c = new SlackExportConnector({ path: zipPath });

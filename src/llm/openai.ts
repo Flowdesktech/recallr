@@ -65,7 +65,7 @@ export class OpenAiCompatClient implements LlmClient {
     } catch (err) {
       const cause = err instanceof Error ? err.message : String(err);
       throw new Error(
-        `mneme: failed to reach LLM at ${url} (${cause}). ` +
+        `recallr: failed to reach LLM at ${url} (${cause}). ` +
           `If you're using Ollama, run \`ollama serve\` and pull a model (\`ollama pull llama3.2\`).`,
       );
     }
@@ -73,7 +73,7 @@ export class OpenAiCompatClient implements LlmClient {
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(
-        `mneme: LLM returned ${res.status} ${res.statusText} from ${url}\n${text.slice(0, 500)}`,
+        `recallr: LLM returned ${res.status} ${res.statusText} from ${url}\n${text.slice(0, 500)}`,
       );
     }
 
@@ -82,7 +82,7 @@ export class OpenAiCompatClient implements LlmClient {
     };
     const content = json.choices?.[0]?.message?.content;
     if (typeof content !== "string") {
-      throw new Error(`mneme: LLM response had no message content: ${JSON.stringify(json).slice(0, 300)}`);
+      throw new Error(`recallr: LLM response had no message content: ${JSON.stringify(json).slice(0, 300)}`);
     }
     return content;
   }
@@ -92,7 +92,7 @@ export class OpenAiCompatClient implements LlmClient {
  * Construct an LLM client from environment variables.
  *
  * Resolution order:
- *   1. Explicit `MNEME_LLM_BASE_URL` + `MNEME_LLM_MODEL`
+ *   1. Explicit `RECALLR_LLM_BASE_URL` + `RECALLR_LLM_MODEL`
  *   2. `OPENAI_API_KEY` -> OpenAI cloud
  *   3. Default -> Ollama at localhost:11434 with `llama3.2`
  *
@@ -100,9 +100,9 @@ export class OpenAiCompatClient implements LlmClient {
  * no env vars needed if you have Ollama running.
  */
 export function llmFromEnv(): OpenAiCompatClient {
-  const baseUrl = process.env.MNEME_LLM_BASE_URL;
-  const model = process.env.MNEME_LLM_MODEL;
-  const apiKey = process.env.MNEME_LLM_API_KEY ?? process.env.OPENAI_API_KEY;
+  const baseUrl = process.env.RECALLR_LLM_BASE_URL;
+  const model = process.env.RECALLR_LLM_MODEL;
+  const apiKey = process.env.RECALLR_LLM_API_KEY ?? process.env.OPENAI_API_KEY;
 
   if (baseUrl && model) {
     return new OpenAiCompatClient({ baseUrl, apiKey, defaultModel: model });

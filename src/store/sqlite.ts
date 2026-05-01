@@ -28,7 +28,7 @@ import type {
  * Search is hybrid by default: pull `candidates` BM25 hits (default 200),
  * load their vectors, rerank by cosine, return `limit` (default 10).
  * If no query vector is supplied we return the BM25 results directly,
- * which keeps `mneme search` cheap when an embedder isn't configured.
+ * which keeps `recallr search` cheap when an embedder isn't configured.
  */
 export class SqliteStore implements Store {
   private readonly db: Db;

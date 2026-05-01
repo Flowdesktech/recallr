@@ -26,7 +26,7 @@ export function serveCommand(): Command {
         });
 
         process.stdout.write(
-          `\n  ${pc.bold("mneme")} ${pc.dim("·")} ${pc.cyan(url)}\n` +
+          `\n  ${pc.bold("recallr")} ${pc.dim("·")} ${pc.cyan(url)}\n` +
             `  ${pc.dim("Press Ctrl+C to stop.")}\n\n`,
         );
 

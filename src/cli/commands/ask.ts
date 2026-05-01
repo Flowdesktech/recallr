@@ -8,7 +8,7 @@ import { SqliteStore } from "../../store/sqlite.js";
 
 export function askCommand(): Command {
   return new Command("ask")
-    .description("Ask a question. Mneme retrieves relevant messages and answers with citations.")
+    .description("Ask a question. Recallr retrieves relevant messages and answers with citations.")
     .argument("<question...>", "The question to ask")
     .option("-k, --limit <n>", "Number of messages to use as context", (v) => Number.parseInt(v, 10), 8)
     .option("--source <source>", "Restrict to a single source (imap, mbox, slack, ...)")
@@ -26,7 +26,7 @@ export function askCommand(): Command {
       ) => {
         const question = questionParts.join(" ").trim();
         if (!question) {
-          process.stderr.write("mneme: please provide a question\n");
+          process.stderr.write("recallr: please provide a question\n");
           process.exit(2);
         }
 

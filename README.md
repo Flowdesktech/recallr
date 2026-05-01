@@ -1,28 +1,28 @@
-# mneme
+# recallr
 
 **Local-first memory for every message you've ever sent.**
 
 Index your email and Slack — once. Recall it from your CLI, a local web UI, or any AI assistant via [MCP](https://modelcontextprotocol.io). 100% on-device. BYO model. Discord, WhatsApp, and iMessage on the way.
 
-[![npm](https://img.shields.io/npm/v/mneme.svg)](https://www.npmjs.com/package/mneme)
-[![license](https://img.shields.io/github/license/flowdesktech/mneme)](LICENSE)
-[![CI](https://github.com/flowdesktech/mneme/actions/workflows/ci.yml/badge.svg)](https://github.com/flowdesktech/mneme/actions)
-[![stars](https://img.shields.io/github/stars/flowdesktech/mneme?style=social)](https://github.com/flowdesktech/mneme)
+[![npm](https://img.shields.io/npm/v/recallr.svg)](https://www.npmjs.com/package/recallr)
+[![license](https://img.shields.io/github/license/flowdesktech/recallr)](LICENSE)
+[![CI](https://github.com/flowdesktech/recallr/actions/workflows/ci.yml/badge.svg)](https://github.com/flowdesktech/recallr/actions)
+[![stars](https://img.shields.io/github/stars/flowdesktech/recallr?style=social)](https://github.com/flowdesktech/recallr)
 
-`mneme` (μνήμη — Greek for *memory*) is a tiny TypeScript engine that turns
-your communications into a queryable knowledge graph. Maintained by
-[Flowdesk](https://flowdesk.tech).
+`recallr` is a tiny TypeScript engine that gives any AI assistant total
+recall over every message you've ever sent — without uploading a single
+byte. Maintained by [Flowdesk](https://flowdesk.tech).
 
 ---
 
 > **What if your AI could remember every conversation you've ever had?**
 
-Today, when you ask Cursor or Claude *"what did Ana decide about pricing in March?"*, they have nothing to go on. Your inbox lives in twelve different silos, none of which speak to your AI. Mneme fixes that — locally, with one command.
+Today, when you ask Cursor or Claude *"what did Ana decide about pricing in March?"*, they have nothing to go on. Your inbox lives in twelve different silos, none of which speak to your AI. Recallr fixes that — locally, with one command.
 
 ```bash
-npx mneme index ~/Downloads/gmail-takeout.mbox
-npx mneme index ~/Downloads/slack-export/
-npx mneme ask "what did Ana decide about pricing?"
+npx recallr index ~/Downloads/gmail-takeout.mbox
+npx recallr index ~/Downloads/slack-export/
+npx recallr ask "what did Ana decide about pricing?"
 ```
 
 ```
@@ -43,12 +43,12 @@ Sources:
 
 ---
 
-## Why mneme
+## Why recallr
 
 - **Local-first.** Your messages never leave your machine. Embeddings run on-device via [transformers.js](https://huggingface.co/docs/transformers.js). The LLM is whatever you point it at — Ollama, LM Studio, OpenAI, OpenRouter.
-- **One file, zero daemons.** SQLite + FTS5 + dense vectors stored as `BLOB` columns. Backup is `cp mneme.db elsewhere`.
+- **One file, zero daemons.** SQLite + FTS5 + dense vectors stored as `BLOB` columns. Backup is `cp recallr.db elsewhere`.
 - **Hybrid search.** BM25 for precision, embeddings for recall, fused with min-max normalization. Works well *immediately* — no tuning required.
-- **MCP-native.** A single `mneme mcp` command exposes your memory to any MCP client (Cursor, Claude Desktop, Goose, Zed). No plugins, no configuration ceremony.
+- **MCP-native.** A single `recallr mcp` command exposes your memory to any MCP client (Cursor, Claude Desktop, Goose, Zed). No plugins, no configuration ceremony.
 - **Hackable.** ~3k lines of strict TypeScript across a handful of focused files. Add a new connector in an afternoon.
 
 ---
@@ -58,9 +58,9 @@ Sources:
 ### 1. Install
 
 ```bash
-npm i -g mneme        # global CLI
+npm i -g recallr        # global CLI
 # or
-npx mneme --help      # zero-install
+npx recallr --help      # zero-install
 ```
 
 Requires Node 20.10+. The default model (~33MB) downloads on first index.
@@ -69,14 +69,14 @@ Requires Node 20.10+. The default model (~33MB) downloads on first index.
 
 ```bash
 # A local mbox export from Gmail, Apple Mail, Thunderbird, mutt, etc.
-mneme index ~/mail.mbox
+recallr index ~/mail.mbox
 
 # A Slack workspace export (extract the .zip first)
 unzip slack-export.zip -d slack-export/
-mneme index ./slack-export/
+recallr index ./slack-export/
 ```
 
-Or run `mneme init`, edit `~/.mneme/config.json`, and add real sources:
+Or run `recallr init`, edit `~/.recallr/config.json`, and add real sources:
 
 ```json
 {
@@ -98,32 +98,32 @@ Or run `mneme init`, edit `~/.mneme/config.json`, and add real sources:
 Then:
 
 ```bash
-mneme index            # syncs every configured source
-mneme status           # see what's in the database
+recallr index            # syncs every configured source
+recallr status           # see what's in the database
 ```
 
 ### 3. Ask
 
 ```bash
-mneme ask "what did the team decide about pricing?"
-mneme ask "summarize what Ana said this quarter" --source mbox
-mneme ask "find the figma link for the onboarding redesign" --show-context
+recallr ask "what did the team decide about pricing?"
+recallr ask "summarize what Ana said this quarter" --source mbox
+recallr ask "find the figma link for the onboarding redesign" --show-context
 ```
 
-`mneme ask` uses your configured LLM:
+`recallr ask` uses your configured LLM:
 
 
-| If you have...                           | mneme uses                                                                |
+| If you have...                           | recallr uses                                                                |
 | ---------------------------------------- | ------------------------------------------------------------------------- |
 | `ollama serve` running (default)         | `llama3.2` via `http://localhost:11434/v1`                                |
 | `OPENAI_API_KEY` set                     | OpenAI (`gpt-4o-mini` by default)                                         |
-| `MNEME_LLM_BASE_URL` + `MNEME_LLM_MODEL` | Any OpenAI-compatible endpoint (LM Studio, OpenRouter, Together, Groq, …) |
+| `RECALLR_LLM_BASE_URL` + `RECALLR_LLM_MODEL` | Any OpenAI-compatible endpoint (LM Studio, OpenRouter, Together, Groq, …) |
 
 
 ### 4. Open the web UI
 
 ```bash
-mneme serve
+recallr serve
 # → http://127.0.0.1:7474  (auto-opens in your browser)
 ```
 
@@ -132,10 +132,10 @@ citation to expand the full thread inline. Bound to `127.0.0.1` only —
 your messages never touch a network.
 
 ```bash
-mneme serve --port 9000        # different port
-mneme serve --host 0.0.0.0     # expose on LAN (use carefully)
-mneme serve --no-open          # don't auto-open the browser
-mneme serve --no-embed         # lexical-only (skip loading the embedder)
+recallr serve --port 9000        # different port
+recallr serve --host 0.0.0.0     # expose on LAN (use carefully)
+recallr serve --no-open          # don't auto-open the browser
+recallr serve --no-embed         # lexical-only (skip loading the embedder)
 ```
 
 ### 5. Plug into your AI assistant via MCP
@@ -145,9 +145,9 @@ mneme serve --no-embed         # lexical-only (skip loading the embedder)
 ```json
 {
   "mcpServers": {
-    "mneme": {
+    "recallr": {
       "command": "npx",
-      "args": ["-y", "mneme", "mcp"]
+      "args": ["-y", "recallr", "mcp"]
     }
   }
 }
@@ -157,9 +157,9 @@ mneme serve --no-embed         # lexical-only (skip loading the embedder)
 
 ```json
 {
-  "name": "mneme",
+  "name": "recallr",
   "command": "npx",
-  "args": ["-y", "mneme", "mcp"]
+  "args": ["-y", "recallr", "mcp"]
 }
 ```
 
@@ -179,20 +179,20 @@ The MCP server exposes four tools:
 
 ## Configuration
 
-Mneme reads (in priority order) explicit overrides → environment variables →
-`~/.mneme/config.json` → built-in defaults.
+Recallr reads (in priority order) explicit overrides → environment variables →
+`~/.recallr/config.json` → built-in defaults.
 
 | Variable               | Default                          | Purpose                                                |
 | ---------------------- | -------------------------------- | ------------------------------------------------------ |
-| `MNEME_HOME`           | `~/.mneme`                       | Where the database, model cache, and config live       |
-| `MNEME_DB`             | `$MNEME_HOME/mneme.db`           | Path to the SQLite database file                       |
-| `MNEME_EMBED_MODEL`    | `Xenova/bge-small-en-v1.5`       | Hugging Face id of the embedding model                 |
-| `MNEME_EMBED_DIM`      | `384`                            | Vector dimension produced by the embedder              |
-| `MNEME_LLM_BASE_URL`   | (auto)                           | OpenAI-compatible base URL                             |
-| `MNEME_LLM_MODEL`      | (auto)                           | Model id passed to the LLM                             |
-| `MNEME_LLM_API_KEY`    | `$OPENAI_API_KEY` if set         | Bearer token for the LLM endpoint                      |
+| `RECALLR_HOME`           | `~/.recallr`                       | Where the database, model cache, and config live       |
+| `RECALLR_DB`             | `$RECALLR_HOME/recallr.db`           | Path to the SQLite database file                       |
+| `RECALLR_EMBED_MODEL`    | `Xenova/bge-small-en-v1.5`       | Hugging Face id of the embedding model                 |
+| `RECALLR_EMBED_DIM`      | `384`                            | Vector dimension produced by the embedder              |
+| `RECALLR_LLM_BASE_URL`   | (auto)                           | OpenAI-compatible base URL                             |
+| `RECALLR_LLM_MODEL`      | (auto)                           | Model id passed to the LLM                             |
+| `RECALLR_LLM_API_KEY`    | `$OPENAI_API_KEY` if set         | Bearer token for the LLM endpoint                      |
 
-The same fields are settable in `~/.mneme/config.json`:
+The same fields are settable in `~/.recallr/config.json`:
 
 ```json
 {
@@ -219,7 +219,7 @@ The same fields are settable in `~/.mneme/config.json`:
                                 ┌───────────────────────────┼────────────────┐
                                 ▼                           ▼                ▼
                         ┌──────────────┐           ┌────────────────┐  ┌───────────┐
-                        │ mneme ask    │           │ mneme mcp      │  │ mneme     │
+                        │ recallr ask    │           │ recallr mcp      │  │ recallr     │
                         │ (RAG, CLI)   │           │ (Cursor/Claude)│  │ serve (UI)│
                         └──────────────┘           └────────────────┘  └───────────┘
 ```
@@ -235,7 +235,7 @@ The same fields are settable in `~/.mneme/config.json`:
 | Slack live API                        | Live              | v0.2        |
 | Discord export, WhatsApp, iMessage    | One-shot folder   | v0.2        |
 
-Each connector normalizes its source into a single `Message` shape. The indexer is idempotent: re-running `mneme index` only fetches what's new and only embeds what hasn't been embedded. Search is hybrid — FTS5 BM25 pulls candidates, embedding cosine reranks them, results are fused by min-max-normalized score.
+Each connector normalizes its source into a single `Message` shape. The indexer is idempotent: re-running `recallr index` only fetches what's new and only embeds what hasn't been embedded. Search is hybrid — FTS5 BM25 pulls candidates, embedding cosine reranks them, results are fused by min-max-normalized score.
 
 For corpora under ~250k messages everything fits comfortably on a laptop. Past that, swap in `sqlite-vec` (planned for v0.3).
 
@@ -243,7 +243,7 @@ For corpora under ~250k messages everything fits comfortably on a laptop. Past t
 
 ## Use as a library
 
-Everything the CLI does is also a public TypeScript API. Embed mneme inside
+Everything the CLI does is also a public TypeScript API. Embed recallr inside
 your own Node service to give each of your users a queryable knowledge graph
 over their own messages.
 
@@ -256,9 +256,9 @@ import {
   indexConnector,
   ask,
   llmFromEnv,
-} from "mneme";
+} from "recallr";
 
-const store = await SqliteStore.open("./alice.mneme.db");
+const store = await SqliteStore.open("./alice.recallr.db");
 const embedder = await LocalEmbedder.load();
 
 await indexConnector({
@@ -283,13 +283,13 @@ console.log(result.answer);
 console.log(result.citations.map((c) => c.message.subject));
 ```
 
-The full type surface is exported from `mneme` and `mneme/mcp`.
+The full type surface is exported from `recallr` and `recallr/mcp`.
 
 ---
 
 ## Roadmap
 
-`mneme` is brand new. The shape of v0.1 is intentionally tight; the roadmap is community-driven.
+`recallr` is brand new. The shape of v0.1 is intentionally tight; the roadmap is community-driven.
 
 **v0.2 — more sources**
 
@@ -305,7 +305,7 @@ The full type surface is exported from `mneme` and `mneme/mcp`.
 - `sqlite-vec` backend for >100k message corpora
 - Int8 / binary vector quantization (4–32× smaller index)
 - Incremental re-embed on model upgrades
-- `mneme watch` daemon: continuously sync configured live sources
+- `recallr watch` daemon: continuously sync configured live sources
 
 **v0.4 — UI v2**
 
@@ -318,7 +318,7 @@ The full type surface is exported from `mneme` and `mneme/mcp`.
 
 - Encrypted-at-rest mode (libsodium-wrapped db)
 - Per-source redaction rules
-- Connector plugin system (`mneme-connector-*` packages)
+- Connector plugin system (`recallr-connector-*` packages)
 
 ---
 
@@ -330,7 +330,7 @@ from `fetch()`. See [`src/connectors/mbox.ts`](src/connectors/mbox.ts) and
 [`src/connectors/slack.ts`](src/connectors/slack.ts) as references.
 
 ```bash
-git clone https://github.com/flowdesktech/mneme && cd mneme
+git clone https://github.com/flowdesktech/recallr && cd recallr
 npm install
 npm run test
 npm run build
@@ -344,4 +344,4 @@ node dist/cli/bin.js ask "what did the team decide about pricing?"
 
 [MIT](LICENSE) © Flowdesk
 
-Mneme is part of [Flowdesk's open source initiative](https://github.com/flowdesktech).
+Recallr is part of [Flowdesk's open source initiative](https://github.com/flowdesktech).

@@ -27,7 +27,7 @@ export class MboxConnector implements Connector {
   async *fetch(opts?: { since?: number; signal?: AbortSignal }): AsyncIterable<Message> {
     const stats = await stat(this.path);
     if (!stats.isFile()) {
-      throw new Error(`mneme: ${this.path} is not a file`);
+      throw new Error(`recallr: ${this.path} is not a file`);
     }
 
     const stream = createReadStream(this.path, { encoding: "utf8" });

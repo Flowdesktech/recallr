@@ -13,7 +13,7 @@ export interface IndexProgress {
 export interface IndexOptions {
   /**
    * Skip embedding (lexical-only index). Useful for very large initial
-   * imports; you can run `mneme reindex --embed` afterwards.
+   * imports; you can run `recallr reindex --embed` afterwards.
    */
   skipEmbeddings?: boolean;
   /** Only fetch messages newer than this epoch ms. */

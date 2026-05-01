@@ -10,7 +10,7 @@ describe("SqliteStore", () => {
   let store: SqliteStore;
 
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), "mneme-test-"));
+    dir = mkdtempSync(join(tmpdir(), "recallr-test-"));
     store = await SqliteStore.open(join(dir, "test.db"));
   });
 

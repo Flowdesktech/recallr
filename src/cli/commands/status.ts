@@ -12,7 +12,7 @@ export function statusCommand(): Command {
       try {
         const stats = await store.stats();
         process.stdout.write(
-          `${pc.bold("mneme")} ${pc.dim(`(${cfg.dbPath})`)}\n` +
+          `${pc.bold("recallr")} ${pc.dim(`(${cfg.dbPath})`)}\n` +
             `  messages:   ${pc.bold(String(stats.messages))}\n` +
             `  embeddings: ${pc.bold(String(stats.embeddings))}\n` +
             `  embedder:   ${cfg.embedModel} (${cfg.embedDimension} dim)\n`,

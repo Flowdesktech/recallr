@@ -44,7 +44,7 @@ export function indexCommand(): Command {
         } else {
           if (cfg.sources.length === 0) {
             process.stderr.write(
-              `${pc.red("✗")} No sources configured. Run ${pc.cyan("mneme init")} or pass an mbox path.\n`,
+              `${pc.red("✗")} No sources configured. Run ${pc.cyan("recallr init")} or pass an mbox path.\n`,
             );
             process.exit(2);
           }
@@ -110,7 +110,7 @@ function buildConnector(s: SourceConfig): Connector {
 }
 
 /**
- * Decide which connector to use for a positional `mneme index <path>` arg.
+ * Decide which connector to use for a positional `recallr index <path>` arg.
  *
  * Heuristics, in order:
  *   1. A directory containing `users.json` AND `channels.json` is a Slack export.
@@ -122,7 +122,7 @@ function connectorFromPath(path: string): Connector {
   try {
     s = statSync(path);
   } catch {
-    throw new Error(`mneme: ${path} does not exist`);
+    throw new Error(`recallr: ${path} does not exist`);
   }
 
   if (s.isDirectory()) {
@@ -130,7 +130,7 @@ function connectorFromPath(path: string): Connector {
       return new SlackExportConnector({ path });
     }
     throw new Error(
-      `mneme: ${path} is a directory but doesn't look like a Slack export ` +
+      `recallr: ${path} is a directory but doesn't look like a Slack export ` +
         "(no users.json + channels.json at the root). " +
         "If this is something else, point at the file directly.",
     );
@@ -138,10 +138,10 @@ function connectorFromPath(path: string): Connector {
 
   if (path.toLowerCase().endsWith(".zip")) {
     throw new Error(
-      `mneme: ${path} is a zip file. Slack exports must be unzipped first:\n` +
+      `recallr: ${path} is a zip file. Slack exports must be unzipped first:\n` +
         `  PowerShell:  Expand-Archive ${path} ${path.replace(/\.zip$/i, "")}\n` +
         `  bash/zsh:    unzip ${path} -d ${path.replace(/\.zip$/i, "")}/\n` +
-        "Then run: mneme index <extracted-dir>",
+        "Then run: recallr index <extracted-dir>",
     );
   }
 

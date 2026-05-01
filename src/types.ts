@@ -1,5 +1,5 @@
 /**
- * Core domain types for mneme.
+ * Core domain types for recallr.
  *
  * Every connector (email, slack, discord, ...) normalizes its data into
  * a `Message`. Everything downstream — storage, indexing, search, RAG,
@@ -163,7 +163,7 @@ export interface Store {
   getMessage(id: string): Promise<Message | null>;
   /** Return the full thread containing the given message id, ordered by time. */
   getThread(messageId: string): Promise<Thread | null>;
-  /** Aggregate counts for diagnostics / `mneme status`. */
+  /** Aggregate counts for diagnostics / `recallr status`. */
   stats(): Promise<{ messages: number; embeddings: number; sources: Record<string, number> }>;
   close(): void;
 }
