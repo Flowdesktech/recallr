@@ -1,4 +1,4 @@
-import { mkdir, writeFile, access } from "node:fs/promises";
+import { access, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Command } from "commander";
 import pc from "picocolors";
@@ -56,22 +56,7 @@ export function initCommand(): Command {
 
       await writeFile(configPath, `${JSON.stringify(starter, null, 2)}\n`);
       process.stdout.write(
-        `${pc.green("✓")} Initialized recallr home at ${pc.cyan(cfg.home)}\n` +
-          `  • Database will live at ${pc.cyan(cfg.dbPath)}\n` +
-          `  • Edit ${pc.cyan(configPath)} to add real sources\n` +
-          `  • Run ${pc.cyan("recallr index")} to start indexing\n` +
-          "\n" +
-          `${pc.bold("Connect an LLM (pick one):")}\n` +
-          `  • ${pc.cyan("Ollama")} (local, free) — install https://ollama.com, then:\n` +
-          `      ${pc.dim("ollama serve && ollama pull llama3.2")}\n` +
-          `  • ${pc.cyan("OpenAI")}:           ${pc.dim("export OPENAI_API_KEY=sk-...")}\n` +
-          `  • ${pc.cyan("Anthropic Claude")}: ${pc.dim("export ANTHROPIC_API_KEY=sk-ant-...")}\n` +
-          `  • ${pc.cyan("Google Gemini")}:    ${pc.dim("export GEMINI_API_KEY=AIza...")}\n` +
-          `  • ${pc.cyan("Anything OpenAI-compatible")} (LM Studio, OpenRouter, Groq, Together):\n` +
-          `      ${pc.dim("export RECALLR_LLM_BASE_URL=https://openrouter.ai/api/v1")}\n` +
-          `      ${pc.dim("export RECALLR_LLM_MODEL=meta-llama/llama-3.3-70b-instruct")}\n` +
-          `      ${pc.dim("export RECALLR_LLM_API_KEY=sk-or-...")}\n` +
-          `  Run ${pc.cyan("recallr ask --help")} for the full matrix.\n`,
+        `${pc.green("✓")} Initialized recallr home at ${pc.cyan(cfg.home)}\n  • Database will live at ${pc.cyan(cfg.dbPath)}\n  • Edit ${pc.cyan(configPath)} to add real sources\n  • Run ${pc.cyan("recallr index")} to start indexing\n\n${pc.bold("Connect an LLM (pick one):")}\n  • ${pc.cyan("Ollama")} (local, free) — install https://ollama.com, then:\n      ${pc.dim("ollama serve && ollama pull llama3.2")}\n  • ${pc.cyan("OpenAI")}:           ${pc.dim("export OPENAI_API_KEY=sk-...")}\n  • ${pc.cyan("Anthropic Claude")}: ${pc.dim("export ANTHROPIC_API_KEY=sk-ant-...")}\n  • ${pc.cyan("Google Gemini")}:    ${pc.dim("export GEMINI_API_KEY=AIza...")}\n  • ${pc.cyan("Anything OpenAI-compatible")} (LM Studio, OpenRouter, Groq, Together):\n      ${pc.dim("export RECALLR_LLM_BASE_URL=https://openrouter.ai/api/v1")}\n      ${pc.dim("export RECALLR_LLM_MODEL=meta-llama/llama-3.3-70b-instruct")}\n      ${pc.dim("export RECALLR_LLM_API_KEY=sk-or-...")}\n  Run ${pc.cyan("recallr ask --help")} for the full matrix.\n`,
       );
     });
 }

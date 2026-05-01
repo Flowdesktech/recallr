@@ -57,9 +57,9 @@ describe("HTTP server", () => {
 
   afterAll(async () => {
     await close();
-    if (originalHome === undefined) delete process.env.RECALLR_HOME;
+    if (originalHome === undefined) process.env.RECALLR_HOME = undefined;
     else process.env.RECALLR_HOME = originalHome;
-    if (originalDb === undefined) delete process.env.RECALLR_DB;
+    if (originalDb === undefined) process.env.RECALLR_DB = undefined;
     else process.env.RECALLR_DB = originalDb;
     rmSync(tempHome, { recursive: true, force: true });
   });
@@ -132,5 +132,49 @@ describe("HTTP server", () => {
     expect(body).toContain("recallr test");
     expect(body).not.toContain("root:");
   });
-});
 
+  it("GET /api/threads lists recent threads with snippets", async () => {
+    const res = await fetch(`${baseUrl}/api/threads?limit=5`);
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      count: number;
+      threads: {
+        id: string;
+        source: string;
+        subject?: string;
+        snippet: string;
+        messageCount: number;
+        latestMessageId: string;
+        lastTimestamp: number;
+        participants: { id: string }[];
+      }[];
+    };
+    expect(json.count).toBeGreaterThan(0);
+    expect(json.threads.length).toBeLessThanOrEqual(5);
+    // Threads are ordered by lastTimestamp DESC.
+    for (let i = 1; i < json.threads.length; i++) {
+      expect(json.threads[i]!.lastTimestamp).toBeLessThanOrEqual(
+        json.threads[i - 1]!.lastTimestamp,
+      );
+    }
+    // Each summary needs a usable latestMessageId so the UI can drill in.
+    for (const t of json.threads) {
+      expect(typeof t.latestMessageId).toBe("string");
+      expect(t.latestMessageId.length).toBeGreaterThan(0);
+      expect(t.messageCount).toBeGreaterThanOrEqual(1);
+      expect(t.snippet.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("GET /api/threads filters by source", async () => {
+    const res = await fetch(`${baseUrl}/api/threads?source=mbox&limit=3`);
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { threads: { source: string }[] };
+    for (const t of json.threads) expect(t.source).toBe("mbox");
+
+    const empty = await fetch(`${baseUrl}/api/threads?source=imap&limit=3`);
+    expect(empty.status).toBe(200);
+    const e = (await empty.json()) as { count: number };
+    expect(e.count).toBe(0);
+  });
+});

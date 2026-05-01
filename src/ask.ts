@@ -55,9 +55,7 @@ export async function ask(args: {
       "When summarizing across many messages, group by sender or thread.",
     ].join(" ");
 
-  const context = hits
-    .map((h, i) => formatHitForPrompt(h, i + 1))
-    .join("\n\n---\n\n");
+  const context = hits.map((h, i) => formatHitForPrompt(h, i + 1)).join("\n\n---\n\n");
 
   const userPrompt = [
     `Question: ${question}`,
@@ -76,6 +74,96 @@ export async function ask(args: {
 
   const answer = await llm.chat(messages, { signal: options?.signal });
   return { answer, citations: hits };
+}
+
+/**
+ * Streaming RAG. Same retrieval pipeline as `ask()` but emits structured
+ * events as work progresses, so callers (notably the web UI) can show
+ * citations the moment they're known and tokens as they arrive.
+ *
+ * Event sequence for a successful run:
+ *   { type: "citations", citations: SearchHit[] }
+ *   { type: "token", value: string } * N
+ *   { type: "done", answer: string, citations: SearchHit[] }
+ *
+ * On failure:
+ *   { type: "error", message: string }
+ *
+ * Falls back to non-streaming `chat()` when the LLM client doesn't
+ * implement `chatStream` — the consumer sees a single `token` event
+ * followed by `done`, so the rendering code stays uniform.
+ */
+export type AskStreamEvent =
+  | { type: "citations"; citations: SearchHit[] }
+  | { type: "token"; value: string }
+  | { type: "done"; answer: string; citations: SearchHit[] }
+  | { type: "error"; message: string };
+
+export async function* askStream(args: {
+  question: string;
+  store: Store;
+  llm: LlmClient;
+  embedder?: Embedder;
+  options?: AskOptions;
+}): AsyncGenerator<AskStreamEvent, void, void> {
+  const { question, store, llm, embedder, options } = args;
+  const limit = options?.limit ?? 8;
+
+  try {
+    let queryVector: Float32Array | null = null;
+    if (embedder) {
+      const [v] = await embedder.embed([question]);
+      queryVector = v ?? null;
+    }
+
+    const hits = await store.search(question, queryVector, { ...options, limit });
+    yield { type: "citations", citations: hits };
+
+    const systemPrompt =
+      options?.systemPrompt ??
+      [
+        "You are a precise assistant that answers questions using ONLY the provided messages.",
+        "Cite every fact with the bracketed id of the source message, e.g. [#3].",
+        "If the answer is not in the messages, say you don't know — never invent.",
+        "Quote a short verbatim phrase from the source when it strengthens the answer.",
+        "When summarizing across many messages, group by sender or thread.",
+      ].join(" ");
+
+    const context = hits.map((h, i) => formatHitForPrompt(h, i + 1)).join("\n\n---\n\n");
+
+    const userPrompt = [
+      `Question: ${question}`,
+      "",
+      "Messages (context, ordered most-relevant first):",
+      "",
+      context || "(no matching messages found)",
+      "",
+      "Answer the question using ONLY the messages above. Cite sources as [#1], [#2], etc.",
+    ].join("\n");
+
+    const messages: ChatMessage[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ];
+
+    let answer = "";
+    if (typeof llm.chatStream === "function") {
+      for await (const chunk of llm.chatStream(messages, { signal: options?.signal })) {
+        answer += chunk;
+        yield { type: "token", value: chunk };
+      }
+    } else {
+      answer = await llm.chat(messages, { signal: options?.signal });
+      yield { type: "token", value: answer };
+    }
+
+    yield { type: "done", answer, citations: hits };
+  } catch (err) {
+    yield {
+      type: "error",
+      message: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 function formatHitForPrompt(hit: SearchHit, ordinal: number): string {

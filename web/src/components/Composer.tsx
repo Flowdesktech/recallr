@@ -13,7 +13,7 @@ export function Composer({ onAsk, disabled }: Props) {
     ref.current?.focus();
   }, []);
 
-  // Auto-resize the textarea up to a sane cap.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: auto-resize on every value change; `ref` isn't a reactive dependency in React.
   useEffect(() => {
     const el = ref.current;
     if (!el) return;

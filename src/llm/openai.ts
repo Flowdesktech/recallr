@@ -80,17 +80,7 @@ export class OpenAiCompatClient implements LlmClient {
     } catch (err) {
       const cause = err instanceof Error ? err.message : String(err);
       throw new Error(
-        `recallr: failed to reach LLM at ${url} (${cause}).\n` +
-          "Pick one and try again:\n" +
-          "  • Local (free):  install https://ollama.com, then `ollama serve` + `ollama pull llama3.2`\n" +
-          "  • OpenAI:       export OPENAI_API_KEY=sk-...\n" +
-          "  • Anthropic:    export ANTHROPIC_API_KEY=sk-ant-...\n" +
-          "  • Google Gemini: export GEMINI_API_KEY=AIza...\n" +
-          "  • Anything else (LM Studio, OpenRouter, Groq, Together, …):\n" +
-          "      export RECALLR_LLM_BASE_URL=https://openrouter.ai/api/v1\n" +
-          "      export RECALLR_LLM_MODEL=anthropic/claude-opus-4.7\n" +
-          "      export RECALLR_LLM_API_KEY=sk-or-...\n" +
-          "Run `recallr ask --help` for a full provider matrix.",
+        `recallr: failed to reach LLM at ${url} (${cause}).\nPick one and try again:\n  • Local (free):  install https://ollama.com, then \`ollama serve\` + \`ollama pull llama3.2\`\n  • OpenAI:       export OPENAI_API_KEY=sk-...\n  • Anthropic:    export ANTHROPIC_API_KEY=sk-ant-...\n  • Google Gemini: export GEMINI_API_KEY=AIza...\n  • Anything else (LM Studio, OpenRouter, Groq, Together, …):\n      export RECALLR_LLM_BASE_URL=https://openrouter.ai/api/v1\n      export RECALLR_LLM_MODEL=anthropic/claude-opus-4.7\n      export RECALLR_LLM_API_KEY=sk-or-...\nRun \`recallr ask --help\` for a full provider matrix.`,
       );
     }
 
@@ -106,9 +96,95 @@ export class OpenAiCompatClient implements LlmClient {
     };
     const content = json.choices?.[0]?.message?.content;
     if (typeof content !== "string") {
-      throw new Error(`recallr: LLM response had no message content: ${JSON.stringify(json).slice(0, 300)}`);
+      throw new Error(
+        `recallr: LLM response had no message content: ${JSON.stringify(json).slice(0, 300)}`,
+      );
     }
     return content;
+  }
+
+  /**
+   * Streaming variant. OpenAI-compat servers return SSE chunks of the form
+   *
+   *   data: {"choices":[{"delta":{"content":"hello"}}]}
+   *   data: {"choices":[{"delta":{"content":" world"}}]}
+   *   data: [DONE]
+   *
+   * Anthropic and Gemini use the same SSE envelope behind their compat layers.
+   * Ollama emits the same shape since it speaks OpenAI streaming natively.
+   */
+  async *chatStream(messages: ChatMessage[], opts: ChatOptions = {}): AsyncIterable<string> {
+    const model = opts.model ?? this.defaultModel;
+    const body: Record<string, unknown> = {
+      model,
+      messages,
+      temperature: opts.temperature ?? this.defaultTemperature,
+      stream: true,
+    };
+    const maxTokens = opts.maxTokens ?? this.defaultMaxTokens;
+    if (maxTokens !== undefined) body.max_tokens = maxTokens;
+
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+      accept: "text/event-stream",
+    };
+    if (this.apiKey) headers.authorization = `Bearer ${this.apiKey}`;
+
+    const url = `${this.baseUrl}/chat/completions`;
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: opts.signal,
+      });
+    } catch (err) {
+      const cause = err instanceof Error ? err.message : String(err);
+      throw new Error(`recallr: failed to reach LLM at ${url} (${cause}).`);
+    }
+
+    if (!res.ok || !res.body) {
+      const text = res.body ? await res.text().catch(() => "") : "";
+      throw new Error(
+        `recallr: LLM returned ${res.status} ${res.statusText} from ${url}\n${text.slice(0, 500)}`,
+      );
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    let buffer = "";
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        // SSE frames are separated by blank lines. Walk completed frames out
+        // of the buffer; leave any partial trailing frame for the next read.
+        let sepIndex: number;
+        // biome-ignore lint/suspicious/noAssignInExpressions: idiomatic SSE frame walker — assign-and-test is the clearest expression of "consume each completed frame out of the buffer".
+        while ((sepIndex = buffer.indexOf("\n\n")) !== -1) {
+          const frame = buffer.slice(0, sepIndex);
+          buffer = buffer.slice(sepIndex + 2);
+          for (const line of frame.split("\n")) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data:")) continue;
+            const payload = trimmed.slice(5).trim();
+            if (payload === "[DONE]" || payload === "") continue;
+            let json: { choices?: { delta?: { content?: string } }[] };
+            try {
+              json = JSON.parse(payload);
+            } catch {
+              continue; // be forgiving — some providers emit keep-alive comments
+            }
+            const delta = json.choices?.[0]?.delta?.content;
+            if (typeof delta === "string" && delta.length > 0) yield delta;
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
   }
 }
 
@@ -142,8 +218,7 @@ export function llmFromEnv(
   overrides: LlmOverrides = {},
   fromConfig: LlmFromConfig = {},
 ): OpenAiCompatClient {
-  const baseUrl =
-    overrides.baseUrl ?? process.env.RECALLR_LLM_BASE_URL ?? fromConfig.baseUrl;
+  const baseUrl = overrides.baseUrl ?? process.env.RECALLR_LLM_BASE_URL ?? fromConfig.baseUrl;
   const model = overrides.model ?? process.env.RECALLR_LLM_MODEL ?? fromConfig.model;
 
   // Explicit baseUrl path: caller picked the endpoint, just plumb through.
@@ -188,9 +263,7 @@ interface ProviderShortcut {
   defaultModel: string;
 }
 
-function detectProviderShortcut(
-  fallbackApiKey: string | undefined,
-): ProviderShortcut | null {
+function detectProviderShortcut(fallbackApiKey: string | undefined): ProviderShortcut | null {
   if (process.env.OPENAI_API_KEY) {
     return {
       baseUrl: PROVIDERS.openai.baseUrl,

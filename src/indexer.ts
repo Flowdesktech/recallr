@@ -49,9 +49,7 @@ export async function indexConnector(args: {
   const skipEmbed = options?.skipEmbeddings || !embedder;
 
   const progress: IndexProgress = { fetched: 0, stored: 0, embedded: 0, skipped: 0 };
-  const alreadyEmbedded = embedder
-    ? await store.embeddedIds(embedder.modelId)
-    : new Set<string>();
+  const alreadyEmbedded = embedder ? await store.embeddedIds(embedder.modelId) : new Set<string>();
 
   let buffer: Message[] = [];
 

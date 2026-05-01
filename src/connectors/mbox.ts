@@ -1,6 +1,6 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
-import { simpleParser, type AddressObject, type ParsedMail } from "mailparser";
+import { type AddressObject, type ParsedMail, simpleParser } from "mailparser";
 import type { Connector, Message, Participant } from "../types.js";
 
 /**
@@ -91,9 +91,7 @@ export function mailToMessage(parsed: ParsedMail, provenancePath: string): Messa
 
   const messageId = parsed.messageId?.replace(/^<|>$/g, "");
   const inReplyTo =
-    typeof parsed.inReplyTo === "string"
-      ? parsed.inReplyTo.replace(/^<|>$/g, "")
-      : undefined;
+    typeof parsed.inReplyTo === "string" ? parsed.inReplyTo.replace(/^<|>$/g, "") : undefined;
   const references = Array.isArray(parsed.references)
     ? parsed.references
     : typeof parsed.references === "string"
@@ -103,12 +101,10 @@ export function mailToMessage(parsed: ParsedMail, provenancePath: string): Messa
   // falling back to In-Reply-To, falling back to our own message id (so
   // single-message threads still group correctly).
   const threadId =
-    references[0]?.replace(/^<|>$/g, "") ??
-    inReplyTo ??
-    messageId ??
-    crypto.randomUUID();
+    references[0]?.replace(/^<|>$/g, "") ?? inReplyTo ?? messageId ?? crypto.randomUUID();
 
-  const sourceId = messageId ?? `${parsed.subject ?? ""}|${parsed.date?.toISOString() ?? ""}|${from.id}`;
+  const sourceId =
+    messageId ?? `${parsed.subject ?? ""}|${parsed.date?.toISOString() ?? ""}|${from.id}`;
 
   return {
     id: `mbox:${sourceId}`,
@@ -141,14 +137,12 @@ function addressToParticipant(
   const email = v.address?.toLowerCase();
   return {
     id: email ?? v.name ?? "unknown",
-    name: v.name && v.name.trim() ? v.name : undefined,
+    name: v.name?.trim() ? v.name : undefined,
     email: email,
   };
 }
 
-function addressesToParticipants(
-  addr: AddressObject | AddressObject[] | undefined,
-): Participant[] {
+function addressesToParticipants(addr: AddressObject | AddressObject[] | undefined): Participant[] {
   if (!addr) return [];
   const arr = Array.isArray(addr) ? addr : [addr];
   const out: Participant[] = [];
@@ -158,7 +152,7 @@ function addressesToParticipants(
       if (!email && !v.name) continue;
       out.push({
         id: email ?? v.name ?? "unknown",
-        name: v.name && v.name.trim() ? v.name : undefined,
+        name: v.name?.trim() ? v.name : undefined,
         email,
       });
     }

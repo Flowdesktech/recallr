@@ -2,29 +2,67 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 concurrency:
+  # Cancel in-flight runs on the same ref when a new push lands. Keeps PR
+  # CI snappy and stops force-pushes from piling up duplicate jobs.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   test:
+    name: ${{ matrix.os }} · node ${{ matrix.node }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
+      # Don't bail the whole matrix on one OS/node failure — partial
+      # signal is more useful than no signal when something OS-specific
+      # breaks (better-sqlite3 native build, line-ending quirks, ...).
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         node: [20, 22]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run build
-      - run: npm test
+
+      - name: Install dependencies
+        # `npm ci` is strict about the lockfile being in sync with
+        # package.json, which is exactly what we want CI to enforce.
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        # Tests must pass before the build step so we get clear failure
+        # signals on logic regressions, not on the (slower) bundler step.
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Smoke-test the built CLI
+        # Sanity-check that the published artifact actually runs end to
+        # end against the bundled sample corpus. No LLM is required for
+        # `index` / `status` — only `ask` would, and that's covered by
+        # the unit/integration suite via stubs. RECALLR_HOME points at a
+        # workspace-local dir so we don't touch the runner's $HOME.
+        env:
+          RECALLR_HOME: ${{ github.workspace }}/.recallr-ci
+        run: |
+          node dist/cli/bin.js --version
+          node dist/cli/bin.js init
+          node dist/cli/bin.js index examples/sample.mbox --no-embed
+          node dist/cli/bin.js status
+        shell: bash

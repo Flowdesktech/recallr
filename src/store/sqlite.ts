@@ -1,8 +1,9 @@
-import Database, { type Database as Db } from "better-sqlite3";
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
+import Database, { type Database as Db } from "better-sqlite3";
 import type {
   Attachment,
+  ListThreadsOptions,
   Message,
   Participant,
   SearchHit,
@@ -10,6 +11,7 @@ import type {
   Source,
   Store,
   Thread,
+  ThreadSummary,
 } from "../types.js";
 
 /**
@@ -87,12 +89,8 @@ export class SqliteStore implements Store {
           id: m.id,
           subject: m.subject ?? "",
           body: m.body,
-          from_text: [m.from.name, m.from.email, m.from.id]
-            .filter(Boolean)
-            .join(" "),
-          to_text: m.to
-            .map((p) => [p.name, p.email, p.id].filter(Boolean).join(" "))
-            .join(" "),
+          from_text: [m.from.name, m.from.email, m.from.id].filter(Boolean).join(" "),
+          to_text: m.to.map((p) => [p.name, p.email, p.id].filter(Boolean).join(" ")).join(" "),
         });
       }
     });
@@ -290,15 +288,141 @@ export class SqliteStore implements Store {
     };
   }
 
+  /**
+   * Recent threads. The query groups messages by (thread_id, source) and
+   * picks the most-recent timestamp per group. For messages without a
+   * thread_id (e.g. a one-off Slack DM with no replies) we synthesize a
+   * pseudo-thread keyed by the message id so the row still appears.
+   *
+   * Snippet + participants come from a single secondary fetch keyed by
+   * the latest-message ids — keeps the SQL simple at the cost of one
+   * extra query per page (cheap because limit is bounded).
+   */
+  async listThreads(opts: ListThreadsOptions = {}): Promise<ThreadSummary[]> {
+    const limit = Math.max(1, Math.min(opts.limit ?? 30, 200));
+    const filters: string[] = [];
+    const params: Record<string, unknown> = { limit };
+    if (opts.source) {
+      filters.push("source = @source");
+      params.source = opts.source;
+    }
+    if (opts.before !== undefined) {
+      filters.push("timestamp < @before");
+      params.before = opts.before;
+    }
+    const where = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+
+    const groupRows = this.db
+      .prepare(
+        `
+        SELECT
+          COALESCE(thread_id, id)         AS thread_key,
+          source                          AS source,
+          MAX(timestamp)                  AS last_timestamp,
+          COUNT(*)                        AS message_count
+        FROM messages
+        ${where}
+        GROUP BY thread_key, source
+        ORDER BY last_timestamp DESC
+        LIMIT @limit
+        `,
+      )
+      .all(params) as {
+      thread_key: string;
+      source: Source;
+      last_timestamp: number;
+      message_count: number;
+    }[];
+
+    if (groupRows.length === 0) return [];
+
+    // Pull the latest message in each thread for snippet + subject + channel.
+    // Doing this as one prepared `IN (?,?,...)` query is fine because limit
+    // is capped at 200.
+    const placeholders = groupRows.map(() => "(?, ?, ?)").join(", ");
+    const flatParams = groupRows.flatMap((g) => [g.thread_key, g.source, g.last_timestamp]);
+    const latestRows = this.db
+      .prepare(
+        `
+        SELECT
+          id                       AS message_id,
+          COALESCE(thread_id, id)  AS thread_key,
+          source, channel, subject, body, timestamp,
+          from_json
+        FROM messages
+        WHERE (COALESCE(thread_id, id), source, timestamp) IN (VALUES ${placeholders})
+        `,
+      )
+      .all(flatParams) as {
+      message_id: string;
+      thread_key: string;
+      source: Source;
+      channel: string | null;
+      subject: string | null;
+      body: string;
+      timestamp: number;
+      from_json: string;
+    }[];
+
+    const latestByKey = new Map<string, (typeof latestRows)[number]>();
+    for (const r of latestRows) latestByKey.set(`${r.thread_key}::${r.source}`, r);
+
+    // Pull every distinct sender in the matching threads (cap participant
+    // collection to keep response lean).
+    const participantRows = this.db
+      .prepare(
+        `
+        SELECT
+          COALESCE(thread_id, id) AS thread_key,
+          source, from_json
+        FROM messages
+        WHERE (COALESCE(thread_id, id), source) IN (
+          SELECT COALESCE(thread_id, id), source FROM messages ${where} GROUP BY 1, 2
+        )
+        `,
+      )
+      .all(params) as { thread_key: string; source: Source; from_json: string }[];
+
+    const participantsByKey = new Map<string, Participant[]>();
+    for (const r of participantRows) {
+      const k = `${r.thread_key}::${r.source}`;
+      if (!participantsByKey.has(k)) participantsByKey.set(k, []);
+      const list = participantsByKey.get(k);
+      if (!list) continue;
+      const p = JSON.parse(r.from_json) as Participant;
+      if (!list.some((existing) => existing.id === p.id)) list.push(p);
+    }
+
+    return groupRows.map((g) => {
+      const k = `${g.thread_key}::${g.source}`;
+      const latest = latestByKey.get(k);
+      const subject = latest?.subject?.trim();
+      const fallbackSubject =
+        subject && subject.length > 0 ? subject : firstLine(latest?.body ?? "(no content)");
+      return {
+        id: g.thread_key,
+        source: g.source,
+        channel: latest?.channel ?? undefined,
+        subject: fallbackSubject,
+        messageCount: g.message_count,
+        participants: (participantsByKey.get(k) ?? []).slice(0, 8),
+        lastTimestamp: g.last_timestamp,
+        snippet: snippet(latest?.body ?? ""),
+        latestMessageId: latest?.message_id ?? g.thread_key,
+      };
+    });
+  }
+
   async stats(): Promise<{
     messages: number;
     embeddings: number;
     sources: Record<string, number>;
   }> {
-    const messages =
-      (this.db.prepare("SELECT COUNT(*) AS n FROM messages").get() as { n: number }).n;
-    const embeddings =
-      (this.db.prepare("SELECT COUNT(*) AS n FROM embeddings").get() as { n: number }).n;
+    const messages = (this.db.prepare("SELECT COUNT(*) AS n FROM messages").get() as { n: number })
+      .n;
+    const embeddings = (
+      this.db.prepare("SELECT COUNT(*) AS n FROM embeddings").get() as { n: number }
+    ).n;
     const sourceRows = this.db
       .prepare("SELECT source, COUNT(*) AS n FROM messages GROUP BY source")
       .all() as { source: string; n: number }[];
@@ -347,13 +471,23 @@ function rowToMessage(r: MessageRow): Message {
     cc: r.cc_json ? (JSON.parse(r.cc_json) as Participant[]) : undefined,
     bcc: r.bcc_json ? (JSON.parse(r.bcc_json) as Participant[]) : undefined,
     timestamp: r.timestamp,
-    attachments: r.attachments_json
-      ? (JSON.parse(r.attachments_json) as Attachment[])
-      : undefined,
+    attachments: r.attachments_json ? (JSON.parse(r.attachments_json) as Attachment[]) : undefined,
     provenance: r.provenance_json
       ? (JSON.parse(r.provenance_json) as Record<string, string>)
       : undefined,
   };
+}
+
+function firstLine(s: string): string {
+  const trimmed = s.replace(/^\s+/, "");
+  const nl = trimmed.indexOf("\n");
+  const oneLine = nl === -1 ? trimmed : trimmed.slice(0, nl);
+  return oneLine.length > 80 ? `${oneLine.slice(0, 80)}…` : oneLine || "(no content)";
+}
+
+function snippet(body: string): string {
+  const oneLine = body.replace(/\s+/g, " ").trim();
+  return oneLine.length > 160 ? `${oneLine.slice(0, 160)}…` : oneLine;
 }
 
 function dedupeParticipants(ps: Participant[]): Participant[] {

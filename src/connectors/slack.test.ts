@@ -63,7 +63,9 @@ describe("SlackExportConnector", () => {
 
     const bot = messages.find((m) => m.body.includes("PR opened"));
     expect(bot?.from.name).toBe("GitHub");
-    expect(bot?.body).toContain("Update Stripe price ids for Q3 launch (https://github.com/flowdesktech/flowdesk/pull/4821)");
+    expect(bot?.body).toContain(
+      "Update Stripe price ids for Q3 launch (https://github.com/flowdesktech/flowdesk/pull/4821)",
+    );
   });
 
   it("groups thread replies under a single threadId", async () => {
@@ -75,7 +77,7 @@ describe("SlackExportConnector", () => {
     const inThread = messages.filter((m) => m.threadId === parent?.threadId);
     expect(inThread.length).toBeGreaterThanOrEqual(4);
     // Parent's threadId should equal slack:T999:C001:<parent.ts>
-    expect(parent?.threadId).toBe(`slack:T999:C001:1740999900.000100`);
+    expect(parent?.threadId).toBe("slack:T999:C001:1740999900.000100");
   });
 
   it("respects the `since` filter", async () => {

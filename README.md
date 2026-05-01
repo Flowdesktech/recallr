@@ -245,8 +245,14 @@ recallr serve
 # → http://127.0.0.1:7474  (auto-opens in your browser)
 ```
 
-A clean local chat UI: ask anything, see citations as cards, click any
-citation to expand the full thread inline. Bound to `127.0.0.1` only —
+A clean local chat UI with:
+
+- **Streaming answers** — citations land first, tokens flow in as the model writes
+- **Faceted search** — filter the next question by source / date range / participant
+- **Thread browser** — recent-conversation rail on the left; click to open
+- **Theme toggle** — dark / light / system (your choice persists across reloads)
+
+Click any citation to expand the full thread inline. Bound to `127.0.0.1` only —
 your messages never touch a network.
 
 ```bash
@@ -457,9 +463,11 @@ The full type surface is exported from `recallr` and `recallr/mcp`.
 
 ## Roadmap
 
-`recallr` is brand new. The shape of v0.1 is intentionally tight; the roadmap is community-driven.
+`recallr` is brand new. The roadmap is community-driven — open an issue
+if you want to drive a track. Shipped versions live in the
+[changelog](#changelog).
 
-**v0.2 — more sources**
+**v0.3 — more sources**
 
 - Gmail API connector (live + Takeout)
 - Slack live API connector (export.zip works today)
@@ -468,19 +476,12 @@ The full type surface is exported from `recallr` and `recallr/mcp`.
 - iMessage (macOS `chat.db` reader)
 - Slack zip-file ingestion (today: extract first, then point at the directory)
 
-**v0.3 — performance & scale**
+**v0.4 — performance & scale**
 
 - `sqlite-vec` backend for >100k message corpora
 - Int8 / binary vector quantization (4–32× smaller index)
 - Incremental re-embed on model upgrades
 - `recallr watch` daemon: continuously sync configured live sources
-
-**v0.4 — UI v2**
-
-- Streaming answers with live citation expansion
-- Faceted search: filter by source, date range, participant
-- Thread browser sidebar
-- Light-mode polish (dark mode is default today)
 
 **v1.0 — polish**
 
@@ -490,21 +491,213 @@ The full type surface is exported from `recallr` and `recallr/mcp`.
 
 ---
 
-## Contributing
+## Local development
 
-Adding a connector is the highest-leverage way to help. Implement the
-[`Connector` interface](src/types.ts) and emit normalized `Message` objects
-from `fetch()`. See [`src/connectors/mbox.ts`](src/connectors/mbox.ts) and
-[`src/connectors/slack.ts`](src/connectors/slack.ts) as references.
+### Prerequisites
+
+- **Node ≥ 20.10** (the engines field is enforced — older versions miss
+  `Float32Array` features used by the embedder)
+- **Git**
+- **An LLM endpoint** for the `ask` command. The fastest free path is
+  [Ollama](https://ollama.com): `ollama serve && ollama pull llama3.2`.
+  See "Connect an LLM" above for cloud alternatives.
+- **Build tools for `better-sqlite3`** (auto-built on install):
+  - macOS: nothing — Xcode CLT is enough
+  - Linux: `python3`, `make`, `g++`
+  - Windows: ships with `node-gyp` prebuilt; if your install fails, run
+    `npm install --global windows-build-tools` once
+
+### First clone
 
 ```bash
 git clone https://github.com/flowdesktech/recallr && cd recallr
 npm install
-npm run test
-npm run build
-node dist/cli/bin.js index examples/sample.mbox
-node dist/cli/bin.js ask "what did the team decide about pricing?"
+npm run typecheck
+npm run test          # 45 tests, ~2s
+npm run build         # produces dist/ and dist-web/
 ```
+
+You can now drive everything from `dist/`:
+
+```bash
+node dist/cli/bin.js init
+node dist/cli/bin.js index ./examples/sample.mbox
+node dist/cli/bin.js ask "what did the team decide about pricing?"
+node dist/cli/bin.js serve
+node dist/cli/bin.js mcp
+```
+
+The included `examples/sample.mbox` is a tiny multi-thread fixture so you
+can exercise the full pipeline without touching real mail.
+
+### Two iteration loops
+
+Pick the loop that matches what you're changing.
+
+#### A) Backend / CLI / MCP (most contributions)
+
+```bash
+npm run dev                                                   # tsup --watch
+# in another shell:
+node dist/cli/bin.js ask "your question here"
+```
+
+`tsup --watch` rebuilds `dist/` on every save. The CLI runs against the
+freshly-built bundle each time. For fast inner-loop testing:
+
+```bash
+npm run test:watch                                            # vitest watch
+```
+
+#### B) Web UI (`recallr serve`)
+
+The web UI lives in [`web/`](web/) and is built into `dist-web/` by Vite.
+For UI iteration you want **two processes**: the recallr API and Vite's
+dev server (with HMR). Vite is pre-configured to proxy `/api` to
+`localhost:7474`, so it's all transparent.
+
+```bash
+# terminal 1 — start the recallr backend on its production port
+node dist/cli/bin.js serve --no-open
+
+# terminal 2 — start Vite with hot reload
+npm run dev:web
+# → http://localhost:5173  (proxies /api → :7474 automatically)
+```
+
+Edit anything under `web/src/` and the page hot-reloads in milliseconds.
+When you're happy, `npm run build:web` regenerates `dist-web/` so
+`recallr serve` ships the new UI.
+
+### Working against an isolated database
+
+Everything respects two env vars that let you keep dev runs out of your
+real `~/.recallr`:
+
+```bash
+export RECALLR_HOME=/tmp/recallr-scratch
+export RECALLR_DB=/tmp/recallr-scratch/dev.db
+node dist/cli/bin.js init
+node dist/cli/bin.js index ./examples/sample.mbox
+```
+
+The integration test suite uses exactly this pattern — see
+[`src/server/server.test.ts`](src/server/server.test.ts).
+
+### LLM setup for development
+
+`ask` and the web UI need *some* LLM. If you don't have one configured,
+recallr defaults to Ollama at `http://localhost:11434/v1` and will print
+a friendly error if it can't reach it. Quick options:
+
+```bash
+# Free, local, runs offline:
+ollama serve && ollama pull llama3.2
+
+# Cloud (one env var each):
+export OPENAI_API_KEY=sk-...                # → gpt-5.5-mini
+export ANTHROPIC_API_KEY=sk-ant-...         # → claude-haiku-4-7-latest
+export GEMINI_API_KEY=AIza...               # → gemini-3.0-flash
+
+# Any OpenAI-compatible endpoint:
+export RECALLR_LLM_BASE_URL=https://openrouter.ai/api/v1
+export RECALLR_LLM_MODEL=anthropic/claude-opus-4.7
+export RECALLR_LLM_API_KEY=sk-or-...
+```
+
+Or set these once in `~/.recallr/config.json` under the `llm` block —
+they survive across shells. See "Connect an LLM" earlier in this README
+for the full precedence ladder.
+
+### Useful scripts
+
+| Script              | What it does                                                  |
+| ------------------- | ------------------------------------------------------------- |
+| `npm run dev`       | Watch-mode build of the server / CLI bundle                   |
+| `npm run dev:web`   | Vite dev server with HMR for the web UI                       |
+| `npm run build`     | Production build of both server (`dist/`) and web (`dist-web/`) |
+| `npm run typecheck` | `tsc --noEmit` for both server and web TS projects            |
+| `npm run test`      | Full vitest suite (no network required)                       |
+| `npm run test:watch`| Vitest in watch mode                                          |
+| `npm run lint`      | Biome lint + format check                                     |
+| `npm run format`    | Apply Biome formatting in place                               |
+| `npm run demo`      | Index `examples/sample.mbox` and ask a canned question        |
+
+### Repository layout
+
+```
+src/
+  cli/             Commander-based CLI (recallr <command>)
+  connectors/      Source adapters: mbox, IMAP, Slack export
+  embed/           On-device embedder (transformers.js)
+  llm/             OpenAI-compatible chat client (also streaming)
+  mcp/             MCP server exposing search/ask as agent tools
+  server/          Local HTTP + SSE server backing the web UI
+  store/           SQLite + FTS5 + dense-vector store
+  ask.ts           RAG pipeline (sync and streaming)
+  config.ts        ~/.recallr/config.json loader + precedence
+  indexer.ts       Connector → embedder → store wiring
+  types.ts         Domain types: Message, Store, Connector, LlmClient
+
+web/
+  src/             React UI (App, Sidebar, FilterBar, Composer, ...)
+  vite.config.ts   Dev server config (proxies /api → :7474)
+
+examples/
+  sample.mbox      Multi-thread fixture used by tests + the demo
+
+dist/              Server / CLI build output (npm publishes this)
+dist-web/          Web UI build output  (npm publishes this)
+```
+
+## Contributing
+
+The highest-leverage contributions:
+
+1. **New connectors.** Implement the [`Connector`
+   interface](src/types.ts) and emit normalized `Message` objects from
+   `fetch()`. References:
+   [`mbox.ts`](src/connectors/mbox.ts),
+   [`slack.ts`](src/connectors/slack.ts),
+   [`imap.ts`](src/connectors/imap.ts).
+2. **Bug reports with a reproducer.** Ideally a tiny mbox or JSON export
+   in [`examples/`](examples/) plus a vitest case.
+3. **Web UI polish.** Streaming UX, accessibility, keyboard navigation —
+   the bar in `recallr serve` is intentionally minimal so this is wide
+   open.
+
+PRs run on GitHub Actions — see
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml). The CI matrix is
+`{ubuntu, macos, windows} × {node 20, 22}` and runs typecheck, lint,
+build, and tests. Keep `npm run lint && npm run typecheck && npm test`
+green locally and CI will be happy too.
+
+---
+
+## Changelog
+
+### v0.2.0 — UI v2 (current)
+
+- **Streaming answers.** `recallr serve` now streams over SSE — citations
+  land the moment retrieval finishes, then tokens flow in with a blinking
+  caret. Backed by a new `LlmClient.chatStream` and `POST /api/ask/stream`.
+- **Faceted search bar.** Filter the next question by source, date range
+  ("this week" / "this month" / "last 90d" / "this year"), and a free-text
+  participant match. Filters plumb through `/api/ask`, `/api/ask/stream`,
+  and `/api/search`.
+- **Thread browser sidebar.** New `Store.listThreads()` and `GET
+  /api/threads`; collapsible left rail with recent-conversation snippets.
+- **Manual theme toggle.** Dark / light / system, persisted in
+  `localStorage`, applied pre-React so there's no flash on reload.
+
+### v0.1.0 — first cut
+
+- SQLite + FTS5 hybrid store with on-device embeddings (`bge-small-en-v1.5`)
+- CLI: `init`, `index`, `ask`, `status`, `serve`, `mcp`
+- Connectors: mbox, IMAP, Slack export
+- MCP server exposing `search_messages`, `get_message`, `get_thread`,
+  `status`
+- Bundled web UI (`recallr serve`)
 
 ---
 

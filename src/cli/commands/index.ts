@@ -2,7 +2,7 @@ import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { Command } from "commander";
 import pc from "picocolors";
-import { loadConfig, type SourceConfig } from "../../config.js";
+import { type SourceConfig, loadConfig } from "../../config.js";
 import { ImapConnector } from "../../connectors/imap.js";
 import { MboxConnector } from "../../connectors/mbox.js";
 import { SlackExportConnector } from "../../connectors/slack.js";
@@ -130,18 +130,13 @@ function connectorFromPath(path: string): Connector {
       return new SlackExportConnector({ path });
     }
     throw new Error(
-      `recallr: ${path} is a directory but doesn't look like a Slack export ` +
-        "(no users.json + channels.json at the root). " +
-        "If this is something else, point at the file directly.",
+      `recallr: ${path} is a directory but doesn't look like a Slack export (no users.json + channels.json at the root). If this is something else, point at the file directly.`,
     );
   }
 
   if (path.toLowerCase().endsWith(".zip")) {
     throw new Error(
-      `recallr: ${path} is a zip file. Slack exports must be unzipped first:\n` +
-        `  PowerShell:  Expand-Archive ${path} ${path.replace(/\.zip$/i, "")}\n` +
-        `  bash/zsh:    unzip ${path} -d ${path.replace(/\.zip$/i, "")}/\n` +
-        "Then run: recallr index <extracted-dir>",
+      `recallr: ${path} is a zip file. Slack exports must be unzipped first:\n  PowerShell:  Expand-Archive ${path} ${path.replace(/\.zip$/i, "")}\n  bash/zsh:    unzip ${path} -d ${path.replace(/\.zip$/i, "")}/\nThen run: recallr index <extracted-dir>`,
     );
   }
 

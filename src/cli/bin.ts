@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { initCommand } from "./commands/init.js";
-import { indexCommand } from "./commands/index.js";
 import { askCommand } from "./commands/ask.js";
+import { indexCommand } from "./commands/index.js";
+import { initCommand } from "./commands/init.js";
 import { mcpCommand } from "./commands/mcp.js";
 import { serveCommand } from "./commands/serve.js";
 import { statusCommand } from "./commands/status.js";
@@ -16,7 +16,7 @@ program
       "Typical first run:\n" +
       "  recallr init                                         # create ~/.recallr/\n" +
       "  recallr index ~/Downloads/gmail-takeout.mbox         # ingest some data\n" +
-      "  recallr ask  \"what did Ana decide about pricing?\"    # query it\n" +
+      '  recallr ask  "what did Ana decide about pricing?"    # query it\n' +
       "  recallr serve                                        # or open the web UI\n" +
       "  recallr mcp                                          # or wire it into Cursor / Claude\n\n" +
       "Connecting an LLM (one env var is enough for the cloud providers):\n" +
@@ -28,7 +28,7 @@ program
       "    OpenAI-compatible endpoint via RECALLR_LLM_BASE_URL + RECALLR_LLM_MODEL.\n" +
       "  See `recallr ask --help` for the full matrix and per-call --llm-* flags.",
   )
-  .version("0.1.0");
+  .version("0.2.0");
 
 program.addCommand(initCommand());
 program.addCommand(indexCommand());
@@ -37,11 +37,9 @@ program.addCommand(serveCommand());
 program.addCommand(mcpCommand());
 program.addCommand(statusCommand());
 
-program
-  .parseAsync(process.argv)
-  .catch((err) => {
-    let msg = err instanceof Error ? err.message : String(err);
-    if (!msg.startsWith("recallr:")) msg = `recallr: ${msg}`;
-    process.stderr.write(`${msg}\n`);
-    process.exit(1);
-  });
+program.parseAsync(process.argv).catch((err) => {
+  let msg = err instanceof Error ? err.message : String(err);
+  if (!msg.startsWith("recallr:")) msg = `recallr: ${msg}`;
+  process.stderr.write(`${msg}\n`);
+  process.exit(1);
+});

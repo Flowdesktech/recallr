@@ -146,23 +146,64 @@ export interface ChatOptions {
 
 export interface LlmClient {
   chat(messages: ChatMessage[], opts?: ChatOptions): Promise<string>;
+  /**
+   * Stream a chat completion. Yields partial content deltas in order;
+   * concatenating every yielded chunk reconstructs the full answer.
+   * Implementations that don't natively stream may emit a single chunk
+   * containing the entire response.
+   */
+  chatStream?(messages: ChatMessage[], opts?: ChatOptions): AsyncIterable<string>;
+}
+
+export interface ThreadSummary {
+  id: string;
+  source: Source;
+  channel?: string;
+  subject?: string;
+  /** Message count within the thread. */
+  messageCount: number;
+  /** Distinct participants (capped to a reasonable max for UI rendering). */
+  participants: Participant[];
+  /** Timestamp (epoch ms) of the most recent message. */
+  lastTimestamp: number;
+  /** Snippet from the most recent message body. */
+  snippet: string;
+  /**
+   * The id of the most recent message in the thread. The web UI uses this
+   * to call `/api/thread/{messageId}` for the full thread view — that
+   * endpoint takes a message id rather than a thread id by design.
+   */
+  latestMessageId: string;
+}
+
+export interface ListThreadsOptions {
+  /** Max threads to return. Default 30. */
+  limit?: number;
+  /** Restrict to a single source. */
+  source?: Source;
+  /** Return only threads whose lastTimestamp is strictly before this (for pagination). */
+  before?: number;
 }
 
 export interface Store {
   /** Insert or replace messages by id. Idempotent. */
   upsertMessages(messages: Message[]): Promise<void>;
   /** Persist embeddings for messages keyed by message id. */
-  upsertEmbeddings(
-    rows: { id: string; modelId: string; vector: Float32Array }[],
-  ): Promise<void>;
+  upsertEmbeddings(rows: { id: string; modelId: string; vector: Float32Array }[]): Promise<void>;
   /** Return ids that already have an embedding for the given model. */
   embeddedIds(modelId: string): Promise<Set<string>>;
   /** Hybrid search: BM25 candidates from FTS, optional embedding rerank. */
-  search(query: string, queryVector: Float32Array | null, opts?: SearchOptions): Promise<SearchHit[]>;
+  search(
+    query: string,
+    queryVector: Float32Array | null,
+    opts?: SearchOptions,
+  ): Promise<SearchHit[]>;
   /** Look up a message by id. */
   getMessage(id: string): Promise<Message | null>;
   /** Return the full thread containing the given message id, ordered by time. */
   getThread(messageId: string): Promise<Thread | null>;
+  /** Recent threads, newest first. Used by the web UI's thread browser. */
+  listThreads(opts?: ListThreadsOptions): Promise<ThreadSummary[]>;
   /** Aggregate counts for diagnostics / `recallr status`. */
   stats(): Promise<{ messages: number; embeddings: number; sources: Record<string, number> }>;
   close(): void;

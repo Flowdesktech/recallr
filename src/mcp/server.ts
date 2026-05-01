@@ -1,9 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { loadConfig } from "../config.js";
 import { LocalEmbedder } from "../embed/local.js";
 import { SqliteStore } from "../store/sqlite.js";
@@ -43,10 +40,7 @@ export async function runMcpServer(opts: { useEmbedder?: boolean } = {}): Promis
     }
   }
 
-  const server = new Server(
-    { name: "recallr", version: "0.1.0" },
-    { capabilities: { tools: {} } },
-  );
+  const server = new Server({ name: "recallr", version: "0.2.0" }, { capabilities: { tools: {} } });
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: [
@@ -132,9 +126,7 @@ export async function runMcpServer(opts: { useEmbedder?: boolean } = {}): Promis
           const limit = clampInt(args.limit, 1, 50, 10);
           const after = args.after ? new Date(String(args.after)).getTime() : undefined;
           const before = args.before ? new Date(String(args.before)).getTime() : undefined;
-          const queryVector = embedder
-            ? (await embedder.embed([query]))[0] ?? null
-            : null;
+          const queryVector = embedder ? ((await embedder.embed([query]))[0] ?? null) : null;
           const hits = await store.search(query, queryVector, {
             limit,
             source: args.source as never,

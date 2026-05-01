@@ -1,25 +1,48 @@
-import { useEffect, useState } from "react";
-import { api, type SearchHit, type ThreadResponse } from "../api";
+import { useEffect, useRef, useState } from "react";
+import { type SearchHit, type ThreadResponse, api } from "../api";
 
 interface Props {
-  hit: SearchHit;
+  /** Open the thread containing this message. Required. */
+  messageId: string;
+  /** Optional: a search hit to highlight + use for instant header copy. */
+  hit?: SearchHit;
   onClose: () => void;
 }
 
-export function ThreadPanel({ hit, onClose }: Props) {
+/**
+ * Side panel showing the full thread for a message. The thread is fetched
+ * via /api/thread/{messageId}; while it's loading we render header copy
+ * from the optional `hit` so the panel doesn't pop in empty.
+ */
+export function ThreadPanel({ messageId, hit, onClose }: Props): JSX.Element {
   const [thread, setThread] = useState<ThreadResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const matchRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setThread(null);
     setError(null);
+    let cancelled = false;
     api
-      .thread(hit.message.id)
-      .then(setThread)
+      .thread(messageId)
+      .then((t) => {
+        if (!cancelled) setThread(t);
+      })
       .catch((e: unknown) => {
-        setError(e instanceof Error ? e.message : String(e));
+        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       });
-  }, [hit.message.id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [messageId]);
+
+  // After the thread renders, scroll the highlighted message into view
+  // (only when there's a hit to highlight; otherwise we leave the user
+  // at the top of the most recent message).
+  useEffect(() => {
+    if (!thread || !hit) return;
+    matchRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [thread, hit]);
 
   return (
     <aside className="thread-panel">
@@ -35,9 +58,9 @@ export function ThreadPanel({ hit, onClose }: Props) {
             />
           </svg>
         </button>
-        <div className="thread-title">{thread?.subject ?? hit.message.subject ?? "Thread"}</div>
+        <div className="thread-title">{thread?.subject ?? hit?.message.subject ?? "Thread"}</div>
         <div className="thread-source">
-          {thread?.source ?? hit.message.source}
+          {thread?.source ?? hit?.message.source}
           {thread?.messages.length ? ` · ${thread.messages.length} messages` : ""}
         </div>
       </div>
@@ -49,10 +72,11 @@ export function ThreadPanel({ hit, onClose }: Props) {
           const date = new Date(m.timestamp);
           const dateStr = date.toISOString().slice(0, 16).replace("T", " ");
           const who = m.from.name ?? m.from.email ?? m.from.id;
-          const isMatch = m.id === hit.message.id;
+          const isMatch = m.id === hit?.message.id;
           return (
             <article
               key={m.id}
+              ref={isMatch ? (matchRef as React.RefObject<HTMLElement>) : undefined}
               className={`thread-msg ${isMatch ? "thread-msg-match" : ""}`}
             >
               <header className="thread-msg-head">

@@ -22,36 +22,47 @@ export function askCommand(): Command {
         "Quick provider recipes:\n" +
         "  Ollama (local, free):\n" +
         "    ollama serve && ollama pull llama3.2\n" +
-        "    recallr ask \"...\"\n" +
+        '    recallr ask "..."\n' +
         "  OpenAI:\n" +
         "    export OPENAI_API_KEY=sk-...\n" +
-        "    recallr ask \"...\"                                    # gpt-5.5-mini\n" +
-        "    recallr ask --llm-model gpt-5.5 \"...\"                # any OpenAI model\n" +
+        '    recallr ask "..."                                    # gpt-5.5-mini\n' +
+        '    recallr ask --llm-model gpt-5.5 "..."                # any OpenAI model\n' +
         "  Anthropic Claude:\n" +
         "    export ANTHROPIC_API_KEY=sk-ant-...\n" +
-        "    recallr ask \"...\"                                    # claude-haiku-4-7-latest\n" +
-        "    recallr ask --llm-model claude-opus-4-7-latest \"...\"\n" +
+        '    recallr ask "..."                                    # claude-haiku-4-7-latest\n' +
+        '    recallr ask --llm-model claude-opus-4-7-latest "..."\n' +
         "  Google Gemini:\n" +
         "    export GEMINI_API_KEY=AIza...\n" +
-        "    recallr ask \"...\"                                    # gemini-3.0-flash\n" +
-        "    recallr ask --llm-model gemini-3.1-pro \"...\"\n" +
+        '    recallr ask "..."                                    # gemini-3.0-flash\n' +
+        '    recallr ask --llm-model gemini-3.1-pro "..."\n' +
         "  LM Studio:\n" +
         "    recallr ask --llm-base-url http://localhost:1234/v1 \\\n" +
-        "                --llm-model my-local-model \"...\"\n" +
+        '                --llm-model my-local-model "..."\n' +
         "  OpenRouter / Groq / Together (anything OpenAI-compatible):\n" +
         "    export RECALLR_LLM_BASE_URL=https://openrouter.ai/api/v1\n" +
         "    export RECALLR_LLM_MODEL=meta-llama/llama-3.3-70b-instruct\n" +
         "    export RECALLR_LLM_API_KEY=sk-or-...\n" +
-        "    recallr ask \"...\"",
+        '    recallr ask "..."',
     )
     .argument("<question...>", "The question to ask")
-    .option("-k, --limit <n>", "Number of messages to use as context", (v) => Number.parseInt(v, 10), 8)
+    .option(
+      "-k, --limit <n>",
+      "Number of messages to use as context",
+      (v) => Number.parseInt(v, 10),
+      8,
+    )
     .option("--source <source>", "Restrict to a single source (imap, mbox, slack, ...)")
     .option("--no-embed", "Lexical search only (skip embedding the question)")
     .option("--show-context", "Also print the messages used as context", false)
     .option("--llm-base-url <url>", "OpenAI-compatible base URL (e.g. http://localhost:11434/v1)")
-    .option("--llm-model <model>", "Model id passed to the LLM (e.g. gpt-5.5, claude-opus-4-7-latest, llama3.2)")
-    .option("--llm-api-key <key>", "Bearer token for the LLM endpoint (use --llm-api-key=ollama for local Ollama)")
+    .option(
+      "--llm-model <model>",
+      "Model id passed to the LLM (e.g. gpt-5.5, claude-opus-4-7-latest, llama3.2)",
+    )
+    .option(
+      "--llm-api-key <key>",
+      "Bearer token for the LLM endpoint (use --llm-api-key=ollama for local Ollama)",
+    )
     .action(
       async (
         questionParts: string[],

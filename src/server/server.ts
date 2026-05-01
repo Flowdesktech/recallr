@@ -1,9 +1,9 @@
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
+import { type IncomingMessage, type Server, type ServerResponse, createServer } from "node:http";
 import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ask } from "../ask.js";
+import { ask, askStream } from "../ask.js";
 import { loadConfig } from "../config.js";
 import { LocalEmbedder } from "../embed/local.js";
 import { llmFromEnv } from "../llm/openai.js";
@@ -76,9 +76,7 @@ export async function startServer(opts: ServerOptions = {}): Promise<{
     port,
     url,
     close: async () => {
-      await new Promise<void>((res, rej) =>
-        server.close((err) => (err ? rej(err) : res())),
-      );
+      await new Promise<void>((res, rej) => server.close((err) => (err ? rej(err) : res())));
       store.close();
     },
   };
@@ -126,7 +124,14 @@ async function handleApi(
   }
 
   if (pathname === "/api/ask" && req.method === "POST") {
-    const body = await readJson<{ question: string; limit?: number; source?: string }>(req);
+    const body = await readJson<{
+      question: string;
+      limit?: number;
+      source?: string;
+      participant?: string;
+      after?: number;
+      before?: number;
+    }>(req);
     const result = await ask({
       question: body.question,
       store: ctx.store,
@@ -135,6 +140,9 @@ async function handleApi(
       options: {
         limit: body.limit,
         source: body.source as Source | undefined,
+        participant: body.participant,
+        after: body.after,
+        before: body.before,
       },
     });
     return writeJson(res, 200, {
@@ -143,17 +151,46 @@ async function handleApi(
     });
   }
 
+  if (pathname === "/api/ask/stream" && req.method === "POST") {
+    const body = await readJson<{
+      question: string;
+      limit?: number;
+      source?: string;
+      participant?: string;
+      after?: number;
+      before?: number;
+    }>(req);
+    return streamAsk(res, ctx, body);
+  }
+
+  if (pathname === "/api/threads" && req.method === "GET") {
+    const url = new URL(req.url ?? "/", "http://localhost");
+    const limit = Number.parseInt(url.searchParams.get("limit") ?? "30", 10);
+    const source = url.searchParams.get("source") ?? undefined;
+    const before = url.searchParams.get("before");
+    const threads = await ctx.store.listThreads({
+      limit: Number.isFinite(limit) ? Math.min(limit, 200) : 30,
+      source: source as Source | undefined,
+      before: before ? Number(before) : undefined,
+    });
+    return writeJson(res, 200, { count: threads.length, threads });
+  }
+
   if (pathname === "/api/search" && req.method === "GET") {
     const url = new URL(req.url ?? "/", "http://localhost");
     const query = url.searchParams.get("q") ?? "";
     const limit = Number.parseInt(url.searchParams.get("limit") ?? "10", 10);
     const source = url.searchParams.get("source") ?? undefined;
-    const queryVector = ctx.embedder
-      ? (await ctx.embedder.embed([query]))[0] ?? null
-      : null;
+    const participant = url.searchParams.get("participant") ?? undefined;
+    const after = url.searchParams.get("after");
+    const before = url.searchParams.get("before");
+    const queryVector = ctx.embedder ? ((await ctx.embedder.embed([query]))[0] ?? null) : null;
     const hits = await ctx.store.search(query, queryVector, {
       limit: Number.isFinite(limit) ? limit : 10,
       source: source as Source | undefined,
+      participant,
+      after: after ? Number(after) : undefined,
+      before: before ? Number(before) : undefined,
     });
     return writeJson(res, 200, {
       count: hits.length,
@@ -288,6 +325,81 @@ function writeError(res: ServerResponse, status: number, message: string): void 
   if (res.writableEnded) return;
   res.writeHead(status, { "content-type": "application/json; charset=utf-8" });
   res.end(JSON.stringify({ error: message }));
+}
+
+/**
+ * Stream `askStream` events to a Server-Sent Events response. Each event
+ * is encoded as a single SSE frame with a typed `event:` and a JSON `data:`
+ * payload, which is what `EventSource` and `fetch+ReadableStream` clients
+ * expect.
+ *
+ * We flush after every event because some proxies / Node's HTTP layer will
+ * otherwise coalesce a long stream of small writes into one TCP segment
+ * that arrives only when the response ends — defeating the whole point.
+ */
+async function streamAsk(
+  res: ServerResponse,
+  ctx: RequestContext,
+  body: {
+    question: string;
+    limit?: number;
+    source?: string;
+    participant?: string;
+    after?: number;
+    before?: number;
+  },
+): Promise<void> {
+  res.writeHead(200, {
+    "content-type": "text/event-stream; charset=utf-8",
+    "cache-control": "no-cache, no-transform",
+    connection: "keep-alive",
+    "x-accel-buffering": "no",
+  });
+
+  const send = (event: string, data: unknown): void => {
+    res.write(`event: ${event}\n`);
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  // Heartbeat every 15s so intermediate proxies (and Node itself) don't
+  // close an apparently-idle connection during a slow LLM warmup.
+  const heartbeat = setInterval(() => {
+    if (!res.writableEnded) res.write(": heartbeat\n\n");
+  }, 15_000);
+
+  try {
+    for await (const evt of askStream({
+      question: body.question,
+      store: ctx.store,
+      llm: ctx.llm,
+      embedder: ctx.embedder,
+      options: {
+        limit: body.limit,
+        source: body.source as Source | undefined,
+        participant: body.participant,
+        after: body.after,
+        before: body.before,
+      },
+    })) {
+      if (evt.type === "citations") {
+        send("citations", { citations: evt.citations.map(serializeHit) });
+      } else if (evt.type === "token") {
+        send("token", { value: evt.value });
+      } else if (evt.type === "done") {
+        send("done", {
+          answer: evt.answer,
+          citations: evt.citations.map(serializeHit),
+        });
+      } else {
+        send("error", { message: evt.message });
+      }
+    }
+  } catch (err) {
+    send("error", { message: err instanceof Error ? err.message : String(err) });
+  } finally {
+    clearInterval(heartbeat);
+    if (!res.writableEnded) res.end();
+  }
 }
 
 function serializeHit(h: SearchHit) {

@@ -49,17 +49,12 @@ export class SlackExportConnector implements Connector {
     const st = await stat(this.path).catch(() => null);
     if (!st || !st.isDirectory()) {
       throw new Error(
-        `recallr: ${this.path} is not a directory.\n` +
-          `Slack exports must be unzipped first. On macOS/Linux:\n` +
-          `  unzip slack-export.zip -d slack-export/\n` +
-          `On Windows:\n` +
-          `  Expand-Archive slack-export.zip slack-export/`,
+        `recallr: ${this.path} is not a directory.\nSlack exports must be unzipped first. On macOS/Linux:\n  unzip slack-export.zip -d slack-export/\nOn Windows:\n  Expand-Archive slack-export.zip slack-export/`,
       );
     }
     if (!existsSync(join(this.path, "users.json"))) {
       throw new Error(
-        `recallr: ${this.path} does not look like a Slack export ` +
-          `(no users.json at the root).`,
+        `recallr: ${this.path} does not look like a Slack export (no users.json at the root).`,
       );
     }
 
@@ -76,9 +71,7 @@ export class SlackExportConnector implements Connector {
 
       let files: string[];
       try {
-        files = (await readdir(channelDir))
-          .filter((f) => f.endsWith(".json"))
-          .sort();
+        files = (await readdir(channelDir)).filter((f) => f.endsWith(".json")).sort();
       } catch {
         continue;
       }
@@ -253,10 +246,7 @@ function normalize(
   };
 }
 
-function participantFrom(
-  m: RawSlackMessage,
-  users: Map<string, SlackUser>,
-): Participant | null {
+function participantFrom(m: RawSlackMessage, users: Map<string, SlackUser>): Participant | null {
   if (m.user) {
     const u = users.get(m.user);
     const name =
@@ -327,7 +317,10 @@ export function renderText(
       // <!channel>, <!here>, <!everyone>
       .replace(/<!(channel|here|everyone)>/g, "@$1")
       // <!subteam^S123|name>
-      .replace(/<!subteam\^[A-Z0-9]+(?:\|([^>]+))?>/g, (_, label?: string) => `@${label ?? "group"}`)
+      .replace(
+        /<!subteam\^[A-Z0-9]+(?:\|([^>]+))?>/g,
+        (_, label?: string) => `@${label ?? "group"}`,
+      )
       // <https://x.com|label> or <mailto:a@b|label>
       .replace(/<((?:https?|mailto):[^|>\s]+)\|([^>]+)>/g, "$2 ($1)")
       // <https://x.com>

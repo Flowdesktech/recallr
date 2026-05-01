@@ -66,10 +66,7 @@ export async function loadConfig(overrides?: Partial<RecallrConfig>): Promise<Re
   }
 
   const dbPath = resolve(
-    overrides?.dbPath ??
-      process.env.RECALLR_DB ??
-      onDisk.dbPath ??
-      join(home, "recallr.db"),
+    overrides?.dbPath ?? process.env.RECALLR_DB ?? onDisk.dbPath ?? join(home, "recallr.db"),
   );
 
   const llm: LlmConfig = {

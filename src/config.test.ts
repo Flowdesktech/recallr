@@ -97,10 +97,7 @@ describe("loadConfig + llmFromEnv layering", () => {
     });
     process.env.RECALLR_LLM_BASE_URL = "https://from-env/v1";
     const cfg = await loadConfig();
-    const llm = llmFromEnv(
-      { baseUrl: "https://from-flag/v1", model: "flag-model" },
-      cfg.llm,
-    );
+    const llm = llmFromEnv({ baseUrl: "https://from-flag/v1", model: "flag-model" }, cfg.llm);
     expect(llm).toMatchObject({
       baseUrl: "https://from-flag/v1",
       defaultModel: "flag-model",

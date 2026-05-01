@@ -14,7 +14,12 @@ import type { Embedder } from "../types.js";
 export class LocalEmbedder implements Embedder {
   readonly modelId: string;
   readonly dimension: number;
-  private pipe: { (input: string | string[], opts: { pooling: "mean"; normalize: boolean }): Promise<{ data: Float32Array; dims: number[] }> } | null = null;
+  private pipe:
+    | ((
+        input: string | string[],
+        opts: { pooling: "mean"; normalize: boolean },
+      ) => Promise<{ data: Float32Array; dims: number[] }>)
+    | null = null;
   private readonly hfModel: string;
 
   private constructor(hfModel: string, dimension: number) {

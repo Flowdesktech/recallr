@@ -1,8 +1,11 @@
 import { useMemo } from "react";
-import type { AskResponse, SearchHit } from "../api";
+import type { SearchHit } from "../api";
 
 interface Props {
-  answer: AskResponse;
+  text: string;
+  citations: SearchHit[];
+  /** When true, renders a blinking caret at the end of the text. */
+  streaming?: boolean;
   onOpenCitation: (hit: SearchHit) => void;
 }
 
@@ -12,23 +15,27 @@ interface Props {
  *
  * The model is instructed to cite only ids it was actually shown
  * (1..citations.length), but we defensively bound the index just in case.
+ *
+ * When `streaming` is true the answer text grows over time; we still
+ * parse on every render — the regex over a few KB of text is cheap and
+ * keeps the rendering logic simple.
  */
-export function Answer({ answer, onOpenCitation }: Props) {
-  const segments = useMemo(() => parseCitations(answer.answer), [answer.answer]);
+export function Answer({ text, citations, streaming, onOpenCitation }: Props): JSX.Element {
+  const segments = useMemo(() => parseCitations(text), [text]);
 
   return (
     <div className="answer">
-      <div className="answer-text">
-        {segments.map((seg, i) =>
+      <div className={`answer-text ${streaming ? "streaming" : ""}`}>
+        {segments.map((seg) =>
           seg.kind === "text" ? (
-            <span key={i}>{seg.text}</span>
+            <span key={seg.key}>{seg.text}</span>
           ) : (
             <button
-              key={i}
+              key={seg.key}
               type="button"
               className="cite"
               onClick={() => {
-                const hit = answer.citations[seg.index - 1];
+                const hit = citations[seg.index - 1];
                 if (hit) onOpenCitation(hit);
               }}
             >
@@ -38,9 +45,9 @@ export function Answer({ answer, onOpenCitation }: Props) {
         )}
       </div>
 
-      {answer.citations.length > 0 && (
-        <div className="citations">
-          {answer.citations.map((c, i) => (
+      {citations.length > 0 && (
+        <div className={`citations ${streaming ? "streaming-in" : ""}`}>
+          {citations.map((c, i) => (
             <CitationCard
               key={c.message.id}
               hit={c}
@@ -62,7 +69,7 @@ function CitationCard({
   hit: SearchHit;
   ordinal: number;
   onOpen: () => void;
-}) {
+}): JSX.Element {
   const m = hit.message;
   const date = new Date(m.timestamp).toISOString().slice(0, 10);
   const who = m.from.name ?? m.from.email ?? m.from.id;
@@ -87,8 +94,8 @@ function CitationCard({
 }
 
 type Segment =
-  | { kind: "text"; text: string }
-  | { kind: "cite"; index: number };
+  | { kind: "text"; text: string; key: string }
+  | { kind: "cite"; index: number; key: string };
 
 /**
  * Split the answer text on `[#N]` patterns, keeping the indices.
@@ -96,6 +103,10 @@ type Segment =
  * We accept `[#1]`, `[# 1]`, and `[#1, #2]` (which we expand to
  * two consecutive citations) — different LLMs format these slightly
  * differently and rejecting their output would be hostile.
+ *
+ * Each segment carries a `key` derived from its byte offset so React
+ * can reconcile correctly during streaming (when segments grow but
+ * older positions don't shift).
  */
 function parseCitations(text: string): Segment[] {
   const out: Segment[] = [];
@@ -103,14 +114,23 @@ function parseCitations(text: string): Segment[] {
   let last = 0;
   let m: RegExpExecArray | null = re.exec(text);
   while (m !== null) {
-    if (m.index > last) out.push({ kind: "text", text: text.slice(last, m.index) });
-    const indices = m[1]!.split(/[,#\s]+/).filter(Boolean).map((n) => Number.parseInt(n, 10));
-    for (const idx of indices) {
-      if (Number.isFinite(idx)) out.push({ kind: "cite", index: idx });
+    if (m.index > last) {
+      out.push({ kind: "text", text: text.slice(last, m.index), key: `t:${last}` });
     }
+    const indices = m[1]!
+      .split(/[,#\s]+/)
+      .filter(Boolean)
+      .map((n) => Number.parseInt(n, 10));
+    indices.forEach((idx, sub) => {
+      if (Number.isFinite(idx)) {
+        out.push({ kind: "cite", index: idx, key: `c:${m!.index}:${sub}` });
+      }
+    });
     last = m.index + m[0].length;
     m = re.exec(text);
   }
-  if (last < text.length) out.push({ kind: "text", text: text.slice(last) });
+  if (last < text.length) {
+    out.push({ kind: "text", text: text.slice(last), key: `t:${last}` });
+  }
   return out;
 }
