@@ -1,0 +1,11 @@
+[
+  {
+    "id": "G001",
+    "name": "leadership",
+    "is_archived": false,
+    "is_mpim": false,
+    "members": ["U001", "U002"],
+    "topic": { "value": "Leadership-only" },
+    "purpose": { "value": "" }
+  }
+]

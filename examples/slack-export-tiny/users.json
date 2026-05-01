@@ -1,0 +1,47 @@
+[
+  {
+    "id": "U001",
+    "name": "ana",
+    "real_name": "Ana Diaz",
+    "profile": {
+      "real_name": "Ana Diaz",
+      "display_name": "Ana",
+      "email": "ana@flowdesk.tech"
+    },
+    "is_bot": false,
+    "deleted": false
+  },
+  {
+    "id": "U002",
+    "name": "marc",
+    "real_name": "Marc Liu",
+    "profile": {
+      "real_name": "Marc Liu",
+      "display_name": "Marc",
+      "email": "marc@flowdesk.tech"
+    },
+    "is_bot": false,
+    "deleted": false
+  },
+  {
+    "id": "U003",
+    "name": "hiro",
+    "real_name": "Hiroshi Tanaka",
+    "profile": {
+      "real_name": "Hiroshi Tanaka",
+      "display_name": "Hiro",
+      "email": "hiro@flowdesk.tech"
+    },
+    "is_bot": false,
+    "deleted": false
+  },
+  {
+    "id": "B001",
+    "name": "github",
+    "is_bot": true,
+    "profile": {
+      "real_name": "GitHub",
+      "display_name": "GitHub"
+    }
+  }
+]

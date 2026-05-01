@@ -1,0 +1,84 @@
+[
+  {
+    "type": "message",
+    "subtype": "channel_join",
+    "ts": "1740999600.000001",
+    "user": "U001",
+    "text": "<@U001> has joined the channel"
+  },
+  {
+    "client_msg_id": "msg-001",
+    "type": "message",
+    "team": "T999",
+    "user": "U001",
+    "ts": "1740999900.000100",
+    "text": "Heads up team \u2014 I'm locking Q3 pricing this Friday. Single Pro tier at $19/month. Dropping the Team tier since less than 4% of accounts are on it. Pushback by EOD <#C001|general> if you disagree.",
+    "reactions": [{ "name": "+1", "users": ["U002", "U003"], "count": 2 }]
+  },
+  {
+    "client_msg_id": "msg-002",
+    "type": "message",
+    "team": "T999",
+    "user": "U002",
+    "ts": "1741006920.000200",
+    "thread_ts": "1740999900.000100",
+    "text": "+1 from product. Two questions for <@U001>: education/nonprofit discount? and are we keeping the 20% annual prepay?"
+  },
+  {
+    "client_msg_id": "msg-003",
+    "type": "message",
+    "team": "T999",
+    "user": "U001",
+    "ts": "1741075915.000300",
+    "thread_ts": "1740999900.000100",
+    "text": "1) Edu/nonprofit: keep 50% off as a standalone Pro plan ($9.50/mo) gated by domain verification. 2) Keep annual prepay at 20%. Don&#39;t want a second variable on the same launch."
+  },
+  {
+    "client_msg_id": "msg-004",
+    "type": "message",
+    "team": "T999",
+    "subtype": "bot_message",
+    "bot_id": "B001",
+    "username": "GitHub",
+    "ts": "1741080000.000400",
+    "text": "PR opened: <https://github.com/flowdesktech/flowdesk/pull/4821|Update Stripe price ids for Q3 launch> by <@U002>"
+  },
+  {
+    "type": "message",
+    "subtype": "message_changed",
+    "ts": "1741082000.000500",
+    "message": {
+      "type": "message",
+      "user": "U002",
+      "text": "ignored edit",
+      "ts": "1741006920.000200"
+    }
+  },
+  {
+    "client_msg_id": "msg-006",
+    "type": "message",
+    "team": "T999",
+    "user": "U001",
+    "ts": "1741284600.000600",
+    "thread_ts": "1740999900.000100",
+    "subtype": "thread_broadcast",
+    "text": "Locking it. Pro $19/mo, $182/yr. Edu Pro $9.50/mo with domain verify. Team tier discontinued; existing subs grandfathered through Dec 31."
+  },
+  {
+    "client_msg_id": "msg-007",
+    "type": "message",
+    "team": "T999",
+    "user": "U003",
+    "ts": "1741294000.000700",
+    "text": "Dropping the new onboarding flow draft here for <!channel>. Figma: <https://figma.com/file/onboarding-v3>. Three-step. Skips the workspace setup. Ship target end of Q2.",
+    "files": [
+      {
+        "id": "F001",
+        "name": "onboarding-v3.fig",
+        "title": "Onboarding v3",
+        "mimetype": "application/octet-stream",
+        "size": 184320
+      }
+    ]
+  }
+]

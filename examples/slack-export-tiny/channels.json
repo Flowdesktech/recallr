@@ -1,0 +1,20 @@
+[
+  {
+    "id": "C001",
+    "name": "general",
+    "is_archived": false,
+    "is_general": true,
+    "members": ["U001", "U002", "U003"],
+    "topic": { "value": "Company-wide announcements" },
+    "purpose": { "value": "" }
+  },
+  {
+    "id": "C002",
+    "name": "design",
+    "is_archived": false,
+    "is_general": false,
+    "members": ["U001", "U003"],
+    "topic": { "value": "Design discussions" },
+    "purpose": { "value": "" }
+  }
+]

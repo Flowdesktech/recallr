@@ -1,0 +1,121 @@
+From ana@flowdesk.tech Mon Mar 03 09:14:22 2026
+Message-ID: <q3-pricing-1@flowdesk.tech>
+Date: Mon, 03 Mar 2026 09:14:22 +0000
+From: Ana Diaz <ana@flowdesk.tech>
+To: team@flowdesk.tech
+Subject: Q3 pricing decision
+Content-Type: text/plain; charset=utf-8
+
+Team,
+
+After reviewing the projections and the customer interviews from last week, I'm going to recommend we ship the new pricing in Q3 with a single Pro tier at $19/month. We'll keep Free as-is and drop the old Team tier since less than 4% of accounts are on it.
+
+The reasoning:
+- Pro at $19 captures the heavy-individual-user we kept losing to Superhuman.
+- Single-tier is simpler to communicate and collapses our paywall logic.
+- We'll grandfather existing Team subs through end of year.
+
+I'd like to lock this on Friday so marketing has time to prep the launch site. Please push back today if you disagree.
+
+Ana
+
+From marc@flowdesk.tech Mon Mar 03 11:42:08 2026
+Message-ID: <q3-pricing-2@flowdesk.tech>
+In-Reply-To: <q3-pricing-1@flowdesk.tech>
+References: <q3-pricing-1@flowdesk.tech>
+Date: Mon, 03 Mar 2026 11:42:08 +0000
+From: Marc Liu <marc@flowdesk.tech>
+To: team@flowdesk.tech
+Subject: Re: Q3 pricing decision
+Content-Type: text/plain; charset=utf-8
+
++1 from product. The Team tier is dead weight. Two questions:
+
+1. What about education / nonprofit discount? Right now Team had a 50% off code we honored ad hoc.
+2. Are we keeping the annual prepay discount at 20% or revisiting?
+
+Marc
+
+From ana@flowdesk.tech Tue Mar 04 08:01:55 2026
+Message-ID: <q3-pricing-3@flowdesk.tech>
+In-Reply-To: <q3-pricing-2@flowdesk.tech>
+References: <q3-pricing-1@flowdesk.tech> <q3-pricing-2@flowdesk.tech>
+Date: Tue, 04 Mar 2026 08:01:55 +0000
+From: Ana Diaz <ana@flowdesk.tech>
+To: team@flowdesk.tech
+Subject: Re: Q3 pricing decision
+Content-Type: text/plain; charset=utf-8
+
+Good catches.
+
+1. Education/nonprofit: keep the 50% off code, formalize it as a standalone Pro plan ($9.50/mo) gated by domain verification. I'll write up the application form.
+2. Annual prepay: keep 20%. Don't want to introduce a second variable on the same launch.
+
+Locking this on Friday.
+
+Ana
+
+From hiro@flowdesk.tech Wed Mar 05 14:22:00 2026
+Message-ID: <onboarding-flow-1@flowdesk.tech>
+Date: Wed, 05 Mar 2026 14:22:00 +0000
+From: Hiroshi Tanaka <hiro@flowdesk.tech>
+To: design@flowdesk.tech
+Subject: New onboarding flow draft
+Content-Type: text/plain; charset=utf-8
+
+Hey design,
+
+I sketched the new 3-step onboarding flow we discussed. Figma link:
+  https://figma.com/file/onboarding-v3
+
+Key changes from v2:
+- Skip the workspace setup step. We auto-create one and let users rename later.
+- Account connection is now optional — users can demo the app with a sample inbox.
+- Theme picker moved to settings; not a first-run decision.
+
+Ship target: end of Q2. Holler if anything looks off.
+
+Hiro
+
+From sarah@flowdesk.tech Thu Mar 06 10:11:30 2026
+Message-ID: <budget-1@flowdesk.tech>
+Date: Thu, 06 Mar 2026 10:11:30 +0000
+From: Sarah Chen <sarah@flowdesk.tech>
+To: leads@flowdesk.tech
+Subject: Budget approved for OSS initiative
+Content-Type: text/plain; charset=utf-8
+
+Leads,
+
+The board approved the OSS initiative budget. We're allocating $400k for the year — primarily two engineers and infrastructure costs (CI, hosting, model inference for any cloud-augmented features).
+
+Goals to align on by end of month:
+- One flagship OSS project that's clearly identified with Flowdesk
+- 10k GitHub stars by Q4
+- A clear path from OSS user -> Flowdesk customer
+
+Let's discuss in Monday's leadership sync.
+
+Sarah
+
+From ana@flowdesk.tech Fri Mar 07 16:30:00 2026
+Message-ID: <q3-pricing-locked@flowdesk.tech>
+In-Reply-To: <q3-pricing-3@flowdesk.tech>
+References: <q3-pricing-1@flowdesk.tech> <q3-pricing-3@flowdesk.tech>
+Date: Fri, 07 Mar 2026 16:30:00 +0000
+From: Ana Diaz <ana@flowdesk.tech>
+To: team@flowdesk.tech
+Subject: Re: Q3 pricing decision — LOCKED
+Content-Type: text/plain; charset=utf-8
+
+Locking it. Final decision:
+
+- Free tier: unchanged
+- Pro: $19/month, $182/year (20% off annual)
+- Education/Nonprofit Pro: $9.50/month with domain verification
+- Team tier: discontinued; existing subs grandfathered through Dec 31
+
+Marketing kickoff Monday. Engineering, please update the Stripe price ids in the staging env this weekend.
+
+Thanks for the fast turn,
+Ana

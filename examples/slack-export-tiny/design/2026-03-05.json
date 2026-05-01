@@ -1,0 +1,19 @@
+[
+  {
+    "client_msg_id": "msg-d1",
+    "type": "message",
+    "team": "T999",
+    "user": "U003",
+    "ts": "1741176120.000800",
+    "text": "Quick design check: should the citation pills in <#C001|general> use the accent color or stay neutral? cc <@U001>"
+  },
+  {
+    "client_msg_id": "msg-d2",
+    "type": "message",
+    "team": "T999",
+    "user": "U001",
+    "ts": "1741180000.000900",
+    "thread_ts": "1741176120.000800",
+    "text": "Accent color, definitely. They&#39;re the most-clicked element on the page."
+  }
+]

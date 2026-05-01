@@ -1,0 +1,90 @@
+{
+  "name": "mneme",
+  "version": "0.1.0",
+  "description": "Local-first memory for every message you've ever sent. Index your inboxes; recall them from any AI.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "mneme": "./dist/cli/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/server.d.ts",
+      "import": "./dist/mcp/server.js"
+    }
+  },
+  "files": [
+    "dist",
+    "dist-web",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.10"
+  },
+  "homepage": "https://github.com/flowdesktech/mneme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flowdesktech/mneme.git"
+  },
+  "bugs": "https://github.com/flowdesktech/mneme/issues",
+  "keywords": [
+    "ai",
+    "agent",
+    "mcp",
+    "rag",
+    "email",
+    "imap",
+    "slack",
+    "search",
+    "local-first",
+    "embeddings",
+    "memory",
+    "llm",
+    "personal-knowledge-graph"
+  ],
+  "scripts": {
+    "build": "npm run build:web && tsup",
+    "build:server": "tsup",
+    "build:web": "vite build --config web/vite.config.ts",
+    "dev": "tsup --watch",
+    "dev:web": "vite --config web/vite.config.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web/tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check src web/src",
+    "format": "biome format --write src web/src",
+    "start": "node dist/cli/bin.js",
+    "demo": "node dist/cli/bin.js index ./examples/sample.mbox && node dist/cli/bin.js ask \"what did the team decide about pricing?\""
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.0.0",
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "better-sqlite3": "^11.7.0",
+    "commander": "^12.1.0",
+    "imapflow": "^1.0.171",
+    "mailparser": "^3.7.2",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/mailparser": "^3.4.5",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.13",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  }
+}

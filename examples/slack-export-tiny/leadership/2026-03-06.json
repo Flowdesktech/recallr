@@ -1,0 +1,10 @@
+[
+  {
+    "client_msg_id": "msg-l1",
+    "type": "message",
+    "team": "T999",
+    "user": "U001",
+    "ts": "1741262200.001000",
+    "text": "Board approved the OSS budget: $400k for the year, two engineers + infra. Goal: 10k stars on the flagship project by Q4."
+  }
+]
