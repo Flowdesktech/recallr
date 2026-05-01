@@ -1,6 +1,6 @@
 {
   "name": "recallr",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local-first memory for every message you've ever sent. Index your inboxes; recall them from any AI.",
   "license": "MIT",
   "type": "module",

@@ -59,7 +59,7 @@ export async function startServer(opts: ServerOptions = {}): Promise<{
     }
   }
 
-  const llm = llmFromEnv();
+  const llm = llmFromEnv({}, cfg.llm);
   const webRoot = resolve(opts.webRoot ?? defaultWebRoot());
 
   const server = createServer((req, res) => {

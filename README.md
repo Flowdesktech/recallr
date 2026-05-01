@@ -2,7 +2,7 @@
 
 **Local-first memory for every message you've ever sent.**
 
-Index your email and Slack — once. Recall it from your CLI, a local web UI, or any AI assistant via [MCP](https://modelcontextprotocol.io). 100% on-device. BYO model. Discord, WhatsApp, and iMessage on the way.
+Index your email and Slack — once. Recall it from your CLI, a local web UI, or any AI assistant via [MCP](https://modelcontextprotocol.io). 100% on-device storage. BYO model: works with Ollama, OpenAI, Claude, Gemini, LM Studio, OpenRouter, Groq, Together, or anything OpenAI-compatible. Discord, WhatsApp, and iMessage on the way.
 
 [![npm](https://img.shields.io/npm/v/recallr.svg)](https://www.npmjs.com/package/recallr)
 [![license](https://img.shields.io/github/license/flowdesktech/recallr)](LICENSE)
@@ -102,25 +102,143 @@ recallr index            # syncs every configured source
 recallr status           # see what's in the database
 ```
 
-### 3. Ask
+### 3. Connect an LLM
+
+Recallr talks to **any OpenAI-compatible chat endpoint** — pick whichever
+one you want. Resolution order, most-specific wins:
+
+1. CLI flags (`--llm-base-url`, `--llm-model`, `--llm-api-key`) — one-off per call
+2. Env vars (`RECALLR_LLM_BASE_URL`, `RECALLR_LLM_MODEL`, `RECALLR_LLM_API_KEY`) — per shell
+3. `llm` block in `~/.recallr/config.json` — your persistent setup
+4. **Cloud-provider shortcut env vars** — set one of these and you're done:
+   - `OPENAI_API_KEY` → OpenAI (`gpt-5.5-mini`)
+   - `ANTHROPIC_API_KEY` → Anthropic Claude (`claude-haiku-4-7-latest`)
+   - `GEMINI_API_KEY` (or `GOOGLE_API_KEY`) → Google Gemini (`gemini-3.0-flash`)
+5. Default → Ollama at `http://localhost:11434/v1` (`llama3.2`)
+
+The recommended place for "this is my setup" is the config file:
+
+```json
+{
+  "llm": {
+    "baseUrl": "https://openrouter.ai/api/v1",
+    "model": "anthropic/claude-opus-4.7",
+    "apiKey": "sk-or-..."
+  },
+  "sources": [ /* ... */ ]
+}
+```
+
+Env vars are still useful for "different model on this run" without
+editing the file; CLI flags for a single call.
+
+#### Ollama (local, free, recommended)
+
+```bash
+# 1. Install Ollama: https://ollama.com
+ollama serve              # leave running in another terminal
+ollama pull llama3.2      # ~2GB, one-time
+
+# 2. That's it — recallr finds it automatically.
+recallr ask "what did Ana decide about pricing?"
+```
+
+Want a different local model? Either `ollama pull qwen2.5:7b` and:
+
+```bash
+export RECALLR_LLM_MODEL=qwen2.5:7b      # bash / zsh
+$env:RECALLR_LLM_MODEL = "qwen2.5:7b"    # PowerShell
+```
+
+Or pass it per-call: `recallr ask --llm-model qwen2.5:7b "..."`.
+
+#### OpenAI
+
+```bash
+export OPENAI_API_KEY=sk-...                # bash / zsh
+$env:OPENAI_API_KEY = "sk-..."              # PowerShell
+setx OPENAI_API_KEY "sk-..."                # PowerShell, persistent
+
+recallr ask "..."                           # uses gpt-5.5-mini
+recallr ask --llm-model gpt-5.5 "..."       # any OpenAI model
+```
+
+#### Anthropic Claude
+
+Recallr uses Anthropic's [official OpenAI-compat layer](https://docs.anthropic.com/en/api/openai-sdk) — no extra config beyond an API key:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...         # bash / zsh
+$env:ANTHROPIC_API_KEY = "sk-ant-..."       # PowerShell
+
+recallr ask "..."                           # uses claude-haiku-4-7-latest
+recallr ask --llm-model claude-sonnet-4-7-latest "..."
+recallr ask --llm-model claude-opus-4-7-latest "..."
+```
+
+#### Google Gemini
+
+Recallr uses Gemini's [OpenAI-compat layer](https://ai.google.dev/gemini-api/docs/openai). Get a free key at [aistudio.google.com](https://aistudio.google.com/app/apikey):
+
+```bash
+export GEMINI_API_KEY=AIza...               # bash / zsh
+$env:GEMINI_API_KEY = "AIza..."             # PowerShell
+
+recallr ask "..."                           # uses gemini-3.0-flash (fast + free tier)
+recallr ask --llm-model gemini-3.1-pro "..."
+```
+
+`GOOGLE_API_KEY` is accepted as an alias for `GEMINI_API_KEY` for compatibility with Google's other SDKs.
+
+#### LM Studio
+
+Start LM Studio's local server, then:
+
+```bash
+recallr ask --llm-base-url http://localhost:1234/v1 \
+            --llm-model my-local-model "..."
+```
+
+Or set it permanently:
+
+```bash
+export RECALLR_LLM_BASE_URL=http://localhost:1234/v1
+export RECALLR_LLM_MODEL=my-local-model
+```
+
+#### OpenRouter / Groq / Together / DeepSeek / any OpenAI-compatible API
+
+```bash
+# Example: OpenRouter (gives you Claude, GPT-4, Llama, Gemini, ... behind one URL)
+export RECALLR_LLM_BASE_URL=https://openrouter.ai/api/v1
+export RECALLR_LLM_MODEL=anthropic/claude-opus-4.7
+export RECALLR_LLM_API_KEY=sk-or-...
+
+# Example: Groq (extremely fast)
+export RECALLR_LLM_BASE_URL=https://api.groq.com/openai/v1
+export RECALLR_LLM_MODEL=llama-3.3-70b-versatile
+export RECALLR_LLM_API_KEY=gsk_...
+
+# Example: Together
+export RECALLR_LLM_BASE_URL=https://api.together.xyz/v1
+export RECALLR_LLM_MODEL=meta-llama/Llama-3.3-70B-Instruct-Turbo
+export RECALLR_LLM_API_KEY=...
+
+recallr ask "..."
+```
+
+Run `recallr ask --help` to see all the per-call overrides.
+
+### 4. Ask
 
 ```bash
 recallr ask "what did the team decide about pricing?"
 recallr ask "summarize what Ana said this quarter" --source mbox
 recallr ask "find the figma link for the onboarding redesign" --show-context
+recallr ask -k 16 "what's the latest from Marc?"      # pull more context
 ```
 
-`recallr ask` uses your configured LLM:
-
-
-| If you have...                           | recallr uses                                                                |
-| ---------------------------------------- | ------------------------------------------------------------------------- |
-| `ollama serve` running (default)         | `llama3.2` via `http://localhost:11434/v1`                                |
-| `OPENAI_API_KEY` set                     | OpenAI (`gpt-4o-mini` by default)                                         |
-| `RECALLR_LLM_BASE_URL` + `RECALLR_LLM_MODEL` | Any OpenAI-compatible endpoint (LM Studio, OpenRouter, Together, Groq, …) |
-
-
-### 4. Open the web UI
+### 5. Open the web UI
 
 ```bash
 recallr serve
@@ -138,7 +256,7 @@ recallr serve --no-open          # don't auto-open the browser
 recallr serve --no-embed         # lexical-only (skip loading the embedder)
 ```
 
-### 5. Plug into your AI assistant via MCP
+### 6. Plug into your AI assistant via MCP
 
 **Claude Desktop** — add to `claude_desktop_config.json`:
 
@@ -190,7 +308,11 @@ Recallr reads (in priority order) explicit overrides → environment variables �
 | `RECALLR_EMBED_DIM`      | `384`                            | Vector dimension produced by the embedder              |
 | `RECALLR_LLM_BASE_URL`   | (auto)                           | OpenAI-compatible base URL                             |
 | `RECALLR_LLM_MODEL`      | (auto)                           | Model id passed to the LLM                             |
-| `RECALLR_LLM_API_KEY`    | `$OPENAI_API_KEY` if set         | Bearer token for the LLM endpoint                      |
+| `RECALLR_LLM_API_KEY`    | (none)                           | Bearer token for the LLM endpoint                      |
+| `OPENAI_API_KEY`         | (none)                           | Shortcut: enables OpenAI       (`gpt-5.5-mini`)        |
+| `ANTHROPIC_API_KEY`      | (none)                           | Shortcut: enables Anthropic    (`claude-haiku-4-7-latest`) |
+| `GEMINI_API_KEY`         | (none)                           | Shortcut: enables Google Gemini (`gemini-3.0-flash`)   |
+| `GOOGLE_API_KEY`         | (none)                           | Alias for `GEMINI_API_KEY`                             |
 
 The same fields are settable in `~/.recallr/config.json`:
 
@@ -198,9 +320,55 @@ The same fields are settable in `~/.recallr/config.json`:
 {
   "embedModel": "Xenova/bge-small-en-v1.5",
   "embedDimension": 384,
+  "llm": {
+    "baseUrl": "https://api.openai.com/v1",
+    "model": "gpt-5.5-mini",
+    "apiKey": "sk-..."
+  },
   "sources": [ /* ... see Quickstart ... */ ]
 }
 ```
+
+> Heads up: API keys committed to a config file are still secrets. If you
+> share `config.json` (e.g. in dotfiles) prefer leaving `apiKey` out and
+> exporting `RECALLR_LLM_API_KEY` from your shell instead.
+
+---
+
+## Troubleshooting
+
+**`recallr ask` says "failed to reach LLM at http://localhost:11434/v1"**
+You don't have Ollama running and no provider env var is set. Either:
+- start Ollama (`ollama serve` + `ollama pull llama3.2`), or
+- set one of `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GEMINI_API_KEY`, or
+- point at any OpenAI-compatible endpoint via `RECALLR_LLM_BASE_URL` +
+  `RECALLR_LLM_MODEL`.
+
+See [Connect an LLM](#3-connect-an-llm) for full instructions.
+
+**`recallr ask` says "LLM returned 401"**
+The `RECALLR_LLM_API_KEY` (or `OPENAI_API_KEY`) is missing or wrong for
+the base URL you're using. Double-check that the key matches the provider
+of `RECALLR_LLM_BASE_URL`.
+
+**`recallr ask` says "LLM returned 404 / model not found"**
+The model id in `RECALLR_LLM_MODEL` doesn't exist on that endpoint. List
+available models from the provider's docs and set `RECALLR_LLM_MODEL`
+(or pass `--llm-model` per call).
+
+**`recallr index` is slow on first run**
+The embedding model (~33MB, `Xenova/bge-small-en-v1.5`) downloads once
+into `~/.recallr/`. After that indexing is fast. Pass `--no-embed` for a
+~10× faster lexical-only index if you want a quick smoke test.
+
+**`recallr status` shows 0 messages**
+Run `recallr init`, edit `~/.recallr/config.json` to add real sources,
+then `recallr index`. Or just `recallr index <path-to-mbox-or-slack-export>`.
+
+**MCP tools don't show up in Cursor/Claude Desktop**
+Confirm the absolute path to `npx` resolves on the host (some configs need
+`"command": "/usr/local/bin/npx"` or the full Windows path). On first call
+the model is downloaded — give it 10-20s.
 
 ---
 

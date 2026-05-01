@@ -22,6 +22,22 @@ export interface RecallrConfig {
   embedDimension: number;
   /** Sources configured in `~/.recallr/config.json`, if any. */
   sources: SourceConfig[];
+  /**
+   * LLM settings as read from `config.json` (any `RECALLR_LLM_*` env vars
+   * and CLI flags layer on top of this at call time). All fields optional —
+   * if everything is empty the runtime falls back to OpenAI (when
+   * `OPENAI_API_KEY` is set) or Ollama on localhost.
+   */
+  llm: LlmConfig;
+}
+
+export interface LlmConfig {
+  /** OpenAI-compatible base URL, e.g. `https://api.openai.com/v1`. */
+  baseUrl?: string;
+  /** Model id, e.g. `gpt-5.5`, `claude-opus-4-7-latest`, `llama3.2`. */
+  model?: string;
+  /** Bearer token. Prefer env vars for secrets in shared configs. */
+  apiKey?: string;
 }
 
 export type SourceConfig =
@@ -56,6 +72,12 @@ export async function loadConfig(overrides?: Partial<RecallrConfig>): Promise<Re
       join(home, "recallr.db"),
   );
 
+  const llm: LlmConfig = {
+    baseUrl: overrides?.llm?.baseUrl ?? onDisk.llm?.baseUrl,
+    model: overrides?.llm?.model ?? onDisk.llm?.model,
+    apiKey: overrides?.llm?.apiKey ?? onDisk.llm?.apiKey,
+  };
+
   return {
     home,
     dbPath,
@@ -70,5 +92,6 @@ export async function loadConfig(overrides?: Partial<RecallrConfig>): Promise<Re
       onDisk.embedDimension ??
       384,
     sources: overrides?.sources ?? onDisk.sources ?? [],
+    llm,
   };
 }
